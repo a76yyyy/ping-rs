@@ -1,0 +1,216 @@
+[project]
+name = "ping-rs"
+description = "Fast ping implementation using Rust with Python bindings"
+readme = "README.md"
+authors = [{ name = "a76yyyy", email = "a76yyyy@gmail.com" }]
+requires-python = ">=3.10"
+dependencies = []
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    'Programming Language :: Python :: 3.13',
+    "Programming Language :: Rust",
+    "Topic :: System :: Networking",
+    "Topic :: System :: Monitoring",
+    'Intended Audience :: Developers',
+    'Intended Audience :: Information Technology',
+    'License :: OSI Approved :: MIT License',
+    'Operating System :: POSIX :: Linux',
+    'Operating System :: Microsoft :: Windows',
+    'Operating System :: MacOS',
+    'Typing :: Typed',
+]
+keywords = ["ping", "network", "monitoring", "rust", "async"]
+dynamic = ['version']
+
+[project.urls]
+Homepage = "https://github.com/a76yyyy/ping-rs"
+Repository = "https://github.com/a76yyyy/ping-rs"
+Source = "https://github.com/a76yyyy/ping-rs"
+
+[tool.maturin]
+python-source = "python"
+module-name = "ping_rs._ping_rs"
+bindings = 'pyo3'
+features = ["pyo3/extension-module"]
+
+[build-system]
+requires = ["maturin>=1.0,<2.0"]
+build-backend = "maturin"
+
+[dependency-groups]
+dev = [
+    "maturin>=1.8.6",
+    "pre-commit>=4.2.0",
+]
+testing = [
+    { include-group = "dev" },
+    "pytest>=7.0",
+    "pytest-asyncio>=0.21.0",
+    "pytest-cov>=6.1.1",
+    'pytest-speed',
+    'pytest-mock',
+    'pytest-pretty',
+    'pytest-run-parallel',
+]
+linting = [{ include-group = "dev" }, "griffe", "black>=23.0", "ruff>=0.1.0", "mypy>=1.0"]
+codspeed = [
+    # codspeed is only run on CI, with latest version of CPython
+    'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
+]
+all = [
+    { include-group = "dev" },
+    { include-group = 'testing' },
+    { include-group = 'linting' },
+]
+
+[[tool.uv.index]]
+name = "pypi"
+url = "https://pypi.org/simple"
+
+[tool.pytest.ini_options]
+asyncio_mode = "strict"
+asyncio_default_fixture_loop_scope = "function"
+# 测试文件匹配模式
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+# 显示详细输出
+addopts = "-v"
+# 日志配置
+log_cli = true
+log_cli_level = "INFO"
+log_cli_format = "%(asctime)s [%(levelname)s] %(message)s (%(filename)s:%(lineno)s)"
+log_cli_date_format = "%Y-%m-%d %H:%M:%S"
+
+[tool.mypy]
+plugins = ['pydantic.mypy']
+mypy_path = "$MYPY_CONFIG_FILE_DIR"
+exclude = ["venv", ".venv", "alembic"]
+
+[tool.ruff]
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".ipynb_checkpoints",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pyenv",
+    ".pytest_cache",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    ".vscode",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "site-packages",
+    "target",
+    "venv",
+]
+
+# Same as Black.
+line-length = 120
+indent-width = 4
+
+# Assume Python 3.10
+target-version = "py310" # 目标Python版本
+
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`) codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = [ # 选择的规则
+    "E",      # pycodestyle errors
+    "W",      # pycodestyle warnings
+    "F",      # pyflakes
+    "I",      # isort
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "UP",     # pyupgrade
+    "ARG001", # unused arguments in functions
+    "N",      # pycodestyle
+]
+ignore = []
+
+# Allow fix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+unfixable = []
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.extend-per-file-ignores]
+"schemas.py" = ["N805"]
+"__init__.py" = ["F401"]
+
+[tool.ruff.format]
+# Like Black, use double quotes for strings.
+quote-style = "double"
+
+# Like Black, indent with spaces, rather than tabs.
+indent-style = "space"
+
+# Like Black, respect magic trailing commas.
+skip-magic-trailing-comma = false
+
+# Like Black, automatically detect the appropriate line ending.
+line-ending = "auto"
+
+# Enable auto-formatting of code examples in docstrings. Markdown,
+# reStructuredText code/literal blocks and doctests are all supported.
+#
+# This is currently disabled by default, but it is planned for this
+# to be opt-out in the future.
+docstring-code-format = false
+
+# Set the line length limit used when formatting code snippets in
+# docstrings.
+#
+# This only has an effect when the `docstring-code-format` setting is
+# enabled.
+docstring-code-line-length = "dynamic"
+
+[tool.ruff.lint.pyupgrade]
+# Preserve types, even if a file imports `from __future__ import annotations`.
+keep-runtime-typing = true
+
+
+[tool.coverage.run]
+source = ['ping_rs']
+branch = true
+omit = ['tests/run_all_tests.py', 'tests/conftest.py']
+
+[tool.coverage.report]
+precision = 2
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "raise NotImplementedError",
+    "if __name__ == .__main__.:",
+    "if __name__ == \"__main__\":",
+    "pass",
+    "raise ImportError",
+    "if TYPE_CHECKING:",
+    "@overload",
+]
+
+[tool.pyright]
+include = ['python/ping_rs']
+reportUnnecessaryTypeIgnoreComment = true

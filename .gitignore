@@ -1,0 +1,89 @@
+#vim
+*.swp
+
+#eclipse
+.classpath
+.project
+.settings/
+
+#intellij
+.idea
+.idea/
+*.iml
+*.iws
+
+#Mac
+.DS_Store
+
+#VsCode
+.vscode/
+
+#Maven
+log/
+logs/
+*.log
+*.class
+target/
+
+#package
+*.jar
+*.war
+*.ear
+uml/
+
+#media
+local_test/
+
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv/
+venv/
+
+# Mypy cache
+.mypy_cache/
+
+# Environment files
+.env.*
+
+# Databases
+*.sqlite3
+*.db
+*.bak
+
+# Coverage report
+.coverage
+htmlcov
+
+# Rust/Maturin specific
+/target/
+**/*.rs.bk
+Cargo.lock
+.cargo-ok
+*.so
+*.dylib
+*.dll
+*.pyd
+*.pyo
+*.pyc
+.pytest_cache/
+.ruff_cache/
+.maturin-build/
+.maturin/
+.rustc_info.json
+.rustup/
+.cargo-target/
+
+# Config
+settings.json
+/.editorconfig
+/*.lcov
+/*.profdata
+/*.profraw
+/foobar.py
