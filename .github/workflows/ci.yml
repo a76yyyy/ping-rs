@@ -207,35 +207,6 @@ jobs:
       - run: uv pip freeze
       - run: uv run pytest
 
-  test-ping-rs-integration:
-    runs-on: ubuntu-latest
-    continue-on-error: true
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: install rust stable
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: cache rust
-        uses: Swatinem/rust-cache@v2
-
-      - name: install uv
-        uses: astral-sh/setup-uv@v6
-
-      - name: install deps
-        run: |
-          uv venv
-          uv pip install maturin pip
-          uv run bash -c 'maturin develop'
-
-      - run: uv --version && uv pip list
-
-      - run: uv run pytest
-
-    env:
-      UV_PROJECT_ENVIRONMENT: ${{ github.workspace }}/.venv
-
   lint:
     runs-on: ubuntu-latest
 

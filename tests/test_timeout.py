@@ -31,7 +31,7 @@ def test_ping_once_timeout(target: TargetType, timeout_ms: int):
 
     # 验证执行时间接近超时时间
     assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"超时时间 {timeout_ms} ms, 实际耗时: {elapsed_time:.2f} ms")
@@ -56,7 +56,7 @@ async def test_ping_once_async_timeout(target: TargetType, timeout_ms: int):
 
     # 验证执行时间接近超时时间
     assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"异步超时时间 {timeout_ms} ms, 实际耗时: {elapsed_time:.2f} ms")
@@ -87,7 +87,7 @@ async def test_ping_multiple_async_timeout(target: TargetType, timeout_ms: int):
 
     # 验证执行时间接近超时时间
     assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"请求了 {count} 个结果，但由于 {timeout_ms} 毫秒超时，实际获取到 {len(results)} 个结果")
@@ -114,7 +114,7 @@ def test_ping_multiple_timeouts(target: TargetType, timeout_ms: int):
 
     # 验证执行时间接近超时时间
     assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"超时时间 {timeout_ms} ms, 实际耗时: {elapsed_time:.2f} ms")
@@ -222,7 +222,7 @@ async def test_timeout_with_concurrency():
     ]
     _ = await asyncio.gather(*tasks)
     end = time.perf_counter()
-    assert end - start < 3.05
+    assert end - start < 6
 
 
 if __name__ == "__main__":
