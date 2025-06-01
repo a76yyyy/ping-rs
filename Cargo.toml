@@ -4,6 +4,7 @@ version = "1.0.0"
 edition = "2021"
 description = "Python bindings for ping functionality using PyO3"
 authors = ["a76yyyy <a76yyyy@gmail.com>"]
+rust-version = "1.87"
 
 [lib]
 name = "_ping_rs"
