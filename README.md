@@ -1,8 +1,10 @@
 # ping-rs
 
-Fast ping implementation using Rust with Python bindings.
+[简体中文](./README_ZH.md) | English
 
-This package provides high-performance ping functionality with both synchronous and asynchronous interfaces, leveraging Rust's performance and safety.
+A high-performance network ping library built with Rust and exposed to Python.
+
+This package provides fast and reliable ping functionality with both synchronous and asynchronous interfaces. By leveraging Rust's performance and safety guarantees, `ping-rs` offers an efficient alternative to traditional Python ping implementations.
 
 ## Installation
 
@@ -148,6 +150,55 @@ Non-blocking ping stream processor.
 
 ## Development
 
+### Advanced Usage Examples
+
+#### Working with PingResult Types
+
+```python
+from ping_rs import ping_once
+
+# Using pattern matching (Python 3.10+)
+result = ping_once("google.com")
+match result:
+    case result if result.is_success():
+        print(f"Success: {result.duration_ms} ms")
+    case result if result.is_timeout():
+        print("Timeout")
+    case result if result.is_unknown():
+        print(f"Unknown response: {result.line}")
+    case result if result.is_exited():
+        print(f"Ping process exited with code {result.exit_code}")
+        print(f"Error message: {result.stderr}")
+    case _:
+        print("Unexpected result type")
+
+# Converting results to dictionaries for data processing
+result = ping_once("google.com")
+result_dict = result.to_dict()
+print(result_dict)  # {'type': 'Pong', 'duration_ms': 15.2, 'line': 'Reply from...'}
+```
+
+#### PingResult Types
+
+PingResult can be one of the following types:
+
+1. **Pong** - Successful ping response
+
+   - `duration_ms` - Ping duration in milliseconds
+   - `line` - Raw output line from ping command
+
+2. **Timeout** - Ping timeout
+
+   - `line` - Raw output line with timeout information
+
+3. **Unknown** - Unrecognized ping response
+
+   - `line` - Raw output line that couldn't be parsed
+
+4. **PingExited** - Ping process exited unexpectedly
+   - `exit_code` - Exit code of the ping process
+   - `stderr` - Error output from the ping process
+
 ### Running Tests
 
 The package includes a comprehensive test suite in the `tests` directory. To run the tests:
@@ -169,7 +220,10 @@ maturin develop
 
 ## Acknowledgements
 
-This package uses the [pinger](https://crates.io/crates/pinger) library, which provides a cross-platform way to execute ping commands and parse their output. The pinger library was originally developed as part of the [gping](https://github.com/orf/gping) project.
+This package uses the following Rust libraries:
+
+- [pinger](https://crates.io/crates/pinger): Provides a cross-platform way to execute ping commands and parse their output. Currently developed as part of the [gping](https://github.com/orf/gping) project.
+- [winping](https://crates.io/crates/winping): Enables native ICMP ping functionality on Windows platforms without relying on external commands.
 
 ## License
 
