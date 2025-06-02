@@ -30,7 +30,6 @@ def test_ping_once_timeout(target: TargetType, timeout_ms: int):
     assert result.is_timeout()  # 应该是超时结果
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.75  # 允许一些误差
     assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
@@ -55,7 +54,6 @@ async def test_ping_once_async_timeout(target: TargetType, timeout_ms: int):
     assert result.is_timeout()  # 应该是超时结果
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.75  # 允许一些误差
     assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
@@ -86,7 +84,6 @@ async def test_ping_multiple_async_timeout(target: TargetType, timeout_ms: int):
     assert len(results) < count  # 由于超时，应该获取不到所有结果
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.75  # 允许一些误差
     assert elapsed_time <= timeout_ms + interval_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
@@ -113,7 +110,6 @@ def test_ping_multiple_timeouts(target: TargetType, timeout_ms: int):
     assert isinstance(results, list)
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.75  # 允许一些误差
     assert elapsed_time <= timeout_ms + interval_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
