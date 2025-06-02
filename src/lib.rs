@@ -1,4 +1,4 @@
-use pinger::{ping, PingOptions, PingResult as RustPingResult};
+use pinger::{PingOptions, PingResult as RustPingResult};
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 use pyo3_async_runtimes::tokio::future_into_py;
@@ -6,6 +6,25 @@ use std::net::IpAddr;
 use std::sync::mpsc;
 use std::sync::OnceLock;
 use std::time::Duration;
+
+// 添加条件编译模块
+#[cfg(target_os = "windows")]
+mod windows;
+
+#[cfg(not(target_os = "windows"))]
+use pinger::ping;
+
+// 根据平台选择适当的 ping 函数
+#[cfg(target_os = "windows")]
+fn platform_ping(options: PingOptions) -> Result<mpsc::Receiver<RustPingResult>, pinger::PingCreationError> {
+    windows::ping(options)
+}
+
+#[cfg(not(target_os = "windows"))]
+fn platform_ping(options: PingOptions) -> Result<mpsc::Receiver<RustPingResult>, pinger::PingCreationError> {
+    ping(options)
+}
+
 /// 验证 interval_ms 参数并转换为 u64
 ///
 /// 由于 ping 命令的 -i 参数格式化为一位小数，所以 interval_ms 必须是 100ms 的倍数且不小于 100ms
@@ -248,7 +267,8 @@ impl Pinger {
             PingOptions::new(&self.target, interval, self.interface.clone())
         };
 
-        let receiver = ping(options)
+        // 使用平台特定的 ping 函数
+        let receiver = platform_ping(options)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
         // 等待第一个结果
@@ -280,7 +300,8 @@ impl Pinger {
                 PingOptions::new(&target, interval, interface)
             };
 
-            let receiver = ping(options).map_err(|e| {
+            // 使用平台特定的 ping 函数
+            let receiver = platform_ping(options).map_err(|e| {
                 PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to start ping: {}", e))
             })?;
 
@@ -473,7 +494,8 @@ fn ping_multiple(
         PingOptions::new(&target_str, interval, interface.clone())
     };
 
-    let receiver = ping(options)
+    // 使用平台特定的 ping 函数
+    let receiver = platform_ping(options)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
     let mut results = Vec::<PingResult>::new();
@@ -563,7 +585,8 @@ fn ping_multiple_async<'py>(
             PingOptions::new(&target_str, interval, interface.clone())
         };
 
-        let receiver = ping(options)
+        // 使用平台特定的 ping 函数
+        let receiver = platform_ping(options)
             .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
         let start_time = std::time::Instant::now();
@@ -737,7 +760,8 @@ fn create_ping_stream(
         PingOptions::new(&target_str, interval, interface)
     };
 
-    let receiver = ping(options)
+    // 使用平台特定的 ping 函数
+    let receiver = platform_ping(options)
         .map_err(|e| PyErr::new::<pyo3::exceptions::PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
     Ok(PingStream {

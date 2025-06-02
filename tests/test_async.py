@@ -146,7 +146,6 @@ async def test_concurrent_error_handling():
 
     logger.info(f"并发错误处理测试: 成功={success_count}, 失败={failure_count}, 异常={exception_count}")
 
-    # 至少应该有一些成功的结果
     assert success_count == 2
     assert failure_count == 1
     assert exception_count == 0
