@@ -54,6 +54,7 @@ jobs:
       - uses: codecov/codecov-action@v5
         with:
           files: codecov.json
+          token: ${{ secrets.CODECOV_TOKEN }}
 
       - uses: codecov/test-results-action@v1
 
@@ -565,5 +566,6 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: |
-            wasm/*.whl
+            dist/*.whl
+            dist/*.tar.gz
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
