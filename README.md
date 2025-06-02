@@ -12,6 +12,14 @@ uv add ping-rs
 
 ## Usage
 
+> **Note:** If you encounter the error `RuntimeError: Failed to start ping: Could not detect ping.`,
+> please install the ping utility first:
+>
+> ```bash
+> # On Debian/Ubuntu
+> sudo apt-get install iputils-ping
+> ```
+
 ### Basic Usage (Synchronous)
 
 ```python

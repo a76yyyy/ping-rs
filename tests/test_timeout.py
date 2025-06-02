@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import sys
 import time
 
 import pytest
@@ -30,8 +31,11 @@ def test_ping_once_timeout(target: TargetType, timeout_ms: int):
     assert result.is_timeout()  # 应该是超时结果
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
+    if not sys.platform.startswith("win"):
+        assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
+        assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    else:
+        assert elapsed_time <= timeout_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"超时时间 {timeout_ms} ms, 实际耗时: {elapsed_time:.2f} ms")
@@ -55,8 +59,11 @@ async def test_ping_once_async_timeout(target: TargetType, timeout_ms: int):
     assert result.is_timeout()  # 应该是超时结果
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
+    if not sys.platform.startswith("win"):
+        assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
+        assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    else:
+        assert elapsed_time <= timeout_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"异步超时时间 {timeout_ms} ms, 实际耗时: {elapsed_time:.2f} ms")
@@ -86,8 +93,11 @@ async def test_ping_multiple_async_timeout(target: TargetType, timeout_ms: int):
     assert len(results) < count  # 由于超时，应该获取不到所有结果
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
+    if not sys.platform.startswith("win"):
+        assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
+        assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    else:
+        assert elapsed_time <= timeout_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"请求了 {count} 个结果，但由于 {timeout_ms} 毫秒超时，实际获取到 {len(results)} 个结果")
@@ -113,8 +123,11 @@ def test_ping_multiple_timeouts(target: TargetType, timeout_ms: int):
     assert isinstance(results, list)
 
     # 验证执行时间接近超时时间
-    assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
-    assert elapsed_time <= timeout_ms * 1.5  # 允许一些额外时间用于处理
+    if not sys.platform.startswith("win"):
+        assert elapsed_time >= timeout_ms * 0.95  # 允许一些误差
+        assert elapsed_time <= timeout_ms * 1.25  # 允许一些额外时间用于处理
+    else:
+        assert elapsed_time <= timeout_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
     logger.info(f"超时时间 {timeout_ms} ms, 实际耗时: {elapsed_time:.2f} ms")

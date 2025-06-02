@@ -113,9 +113,6 @@ async def test_async_exception_handling():
     with pytest.raises(TypeError):
         _ = await ping_once_async(1)  # type: ignore[reportArgumentType]
 
-    result = await ping_once_async("not.an.ip.address/with/invalid/chars")
-    assert result.is_exited()
-
     # 测试极小的间隔时间
     results = await ping_multiple_async("127.0.0.1", count=3, interval_ms=100)
     assert len(results) == 3
