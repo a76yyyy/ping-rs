@@ -124,3 +124,4 @@ clean:
 	rm -rf build
 	rm -rf perf.data*
 	rm -rf python/ping_rs/*.so
+	rm -rf *.profraw
