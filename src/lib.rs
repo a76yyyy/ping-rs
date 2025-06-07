@@ -893,7 +893,7 @@ fn ping_multiple(
 /// 执行多次 ping（异步版本）
 #[pyfunction]
 #[pyo3(signature = (target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=false, ipv6=false))]
-#[allow(clippy::too_many_arguments)]  // 添加允许多参数的属性
+#[allow(clippy::too_many_arguments)] // 添加允许多参数的属性
 fn ping_multiple_async<'py>(
     py: Python<'py>,
     target: &Bound<PyAny>,
