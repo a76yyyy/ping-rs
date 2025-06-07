@@ -10,6 +10,7 @@ __all__ = [
     "PingResult",
     "Pinger",
     "PingStream",
+    "AsyncPingStream",
     "__version__",
     "create_ping_stream",
     "ping_once",
@@ -120,7 +121,15 @@ class Pinger:
         """Execute a single ping synchronously."""
         ...
 
-    async def ping_stream(self, count: int | None = None) -> list[PingResult]:
+    async def ping_once_async(self) -> PingResult:
+        """Execute a single ping asynchronously."""
+        ...
+
+    def ping_multiple(self, count: int = 4, timeout_ms: int | None = None) -> list[PingResult]:
+        """Execute multiple pings synchronously."""
+        ...
+
+    async def ping_multiple_async(self, count: int = 4, timeout_ms: int | None = None) -> list[PingResult]:
         """Execute multiple pings asynchronously."""
         ...
 
@@ -141,6 +150,43 @@ class PingStream:
 
     def is_active(self) -> bool:
         """Check if the stream is still active."""
+        ...
+
+    def __iter__(self) -> PingStream:
+        """Return self as an sync iterator."""
+        ...
+
+    async def __next__(self) -> PingResult:
+        """Get the next ping result synchronously.
+
+        Raises:
+            StopIteration: When the stream is exhausted or the ping process exits
+        """
+        ...
+
+@final
+class AsyncPingStream:
+    """Async ping stream processor."""
+
+    def __init__(
+        self,
+        target: TargetType,
+        interval_ms: int = 1000,
+        interface: str | None = None,
+        ipv4: bool = False,
+        ipv6: bool = False,
+        max_count: int | None = None,
+    ) -> None: ...
+    def __aiter__(self) -> AsyncPingStream:
+        """Return self as an async iterator."""
+        ...
+
+    async def __anext__(self) -> PingResult:
+        """Get the next ping result asynchronously.
+
+        Raises:
+            StopAsyncIteration: When the stream is exhausted or the ping process exits
+        """
         ...
 
 def ping_once(
@@ -193,6 +239,7 @@ def create_ping_stream(
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
+    count: int | None = None,
 ) -> PingStream:
     """Create a non-blocking ping stream."""
     ...
