@@ -620,19 +620,17 @@ impl PingStream {
                         Ok(result) => Ok(Some(result.into())),
                         Err(_) => Err(PyStopIteration::new_err("Stream exhausted")),
                     }
+                } else if non_blocking {
+                    match receiver_guard.try_recv() {
+                        Ok(result) => Ok(Some(result.into())),
+                        Err(mpsc::TryRecvError::Empty) => Ok(None),
+                        Err(mpsc::TryRecvError::Disconnected) => Ok(None),
+                    }
                 } else {
-                    if non_blocking {
-                        match receiver_guard.try_recv() {
-                            Ok(result) => Ok(Some(result.into())),
-                            Err(mpsc::TryRecvError::Empty) => Ok(None),
-                            Err(mpsc::TryRecvError::Disconnected) => Ok(None),
-                        }
-                    } else {
-                        // 阻塞接收
-                        match receiver_guard.recv() {
-                            Ok(result) => Ok(Some(result.into())),
-                            Err(_) => Ok(None),
-                        }
+                    // 阻塞接收
+                    match receiver_guard.recv() {
+                        Ok(result) => Ok(Some(result.into())),
+                        Err(_) => Ok(None),
                     }
                 }
             };
@@ -652,12 +650,10 @@ impl PingStream {
             }
 
             result
+        } else if iter {
+            Err(PyStopIteration::new_err("Stream exhausted"))
         } else {
-            if iter {
-                Err(PyStopIteration::new_err("Stream exhausted"))
-            } else {
-                Ok(None)
-            }
+            Ok(None)
         }
     }
 
@@ -897,6 +893,7 @@ fn ping_multiple(
 /// 执行多次 ping（异步版本）
 #[pyfunction]
 #[pyo3(signature = (target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=false, ipv6=false))]
+#[allow(clippy::too_many_arguments)]  // 添加允许多参数的属性
 fn ping_multiple_async<'py>(
     py: Python<'py>,
     target: &Bound<PyAny>,
