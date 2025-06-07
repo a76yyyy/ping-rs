@@ -96,6 +96,40 @@ fn validate_interval_ms(value: i64, param_name: &str) -> PyResult<u64> {
     Ok(value as u64)
 }
 
+/// 验证 count 参数并转换为 usize
+fn validate_count(count: i32, param_name: &str) -> PyResult<usize> {
+    if count <= 0 {
+        return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+            "{} ({}) must be a positive integer",
+            param_name, count
+        )));
+    }
+    Ok(count as usize)
+}
+
+/// 验证 timeout_ms 参数并转换为 Duration
+///
+/// 如果 timeout_ms 为 None，返回 None
+/// 否则验证 timeout_ms 必须大于等于 interval_ms
+fn validate_timeout_ms(timeout_ms: Option<i64>, interval_ms: u64, param_name: &str) -> PyResult<Option<Duration>> {
+    match timeout_ms {
+        Some(timeout) => {
+            let timeout_ms_u64 = validate_interval_ms(timeout, param_name)?;
+
+            // 确保 timeout_ms 大于 interval_ms
+            if timeout_ms_u64 < interval_ms {
+                return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                    "{} ({} ms) must be greater than or equal to interval_ms ({} ms)",
+                    param_name, timeout_ms_u64, interval_ms
+                )));
+            }
+
+            Ok(Some(Duration::from_millis(timeout_ms_u64)))
+        }
+        None => Ok(None),
+    }
+}
+
 /// 从 Python 对象中提取 IP 地址字符串
 fn extract_target(target: &Bound<PyAny>) -> PyResult<String> {
     // 首先尝试直接提取为 IpAddr（包含 IPv4 和 IPv6）
@@ -380,21 +414,10 @@ impl Pinger {
     #[pyo3(signature = (count=4, timeout_ms=None))]
     fn ping_multiple(&self, count: i32, timeout_ms: Option<i64>) -> PyResult<Vec<PingResult>> {
         // 验证 count 参数
-        if count <= 0 {
-            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "count ({}) must be a positive integer",
-                count
-            )));
-        }
-        let count = count as usize;
+        let count = validate_count(count, "count")?;
 
         // 验证 timeout_ms 参数
-        let timeout = if let Some(timeout) = timeout_ms {
-            let timeout_ms_u64 = validate_interval_ms(timeout, "timeout_ms")?;
-            Some(Duration::from_millis(timeout_ms_u64))
-        } else {
-            None
-        };
+        let timeout = validate_timeout_ms(timeout_ms, self.interval_ms, "timeout_ms")?;
 
         let options = create_ping_options(
             &self.target,
@@ -450,21 +473,10 @@ impl Pinger {
         timeout_ms: Option<i64>,
     ) -> PyResult<Bound<'py, PyAny>> {
         // 验证 count 参数
-        if count <= 0 {
-            return Err(PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
-                "count ({}) must be a positive integer",
-                count
-            )));
-        }
-        let count = count as usize;
+        let count = validate_count(count, "count")?;
 
         // 验证 timeout_ms 参数
-        let timeout = if let Some(timeout) = timeout_ms {
-            let timeout_ms_u64 = validate_interval_ms(timeout, "timeout_ms")?;
-            Some(Duration::from_millis(timeout_ms_u64))
-        } else {
-            None
-        };
+        let timeout = validate_timeout_ms(timeout_ms, self.interval_ms, "timeout_ms")?;
 
         let target = self.target.clone();
         let interval_ms = self.interval_ms;
@@ -569,6 +581,11 @@ impl PingStream {
 
         // 验证 interval_ms 参数
         let interval_ms_u64 = validate_interval_ms(interval_ms, "interval_ms")?;
+
+        // 验证 max_count 如果有的话
+        if let Some(count) = max_count {
+            validate_count(count.try_into().unwrap(), "max_count")?;
+        }
 
         // 创建 ping 选项
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);
@@ -757,6 +774,11 @@ impl AsyncPingStream {
 
         // 验证 interval_ms 参数
         let interval_ms_u64 = validate_interval_ms(interval_ms, "interval_ms")?;
+
+        // 验证 max_count 如果有的话
+        if let Some(count) = max_count {
+            validate_count(count.try_into().unwrap(), "max_count")?;
+        }
 
         // 创建 ping 选项
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);

@@ -51,4 +51,3 @@ strip = false
 
 [target.'cfg(windows)'.dependencies]
 winping = { version = "0.10", features = ["async"] }
-once_cell = { version = "1.21" }
