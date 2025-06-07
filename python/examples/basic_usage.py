@@ -77,20 +77,16 @@ def stream_example():
             break
         print(f"Stream result {i + 1}: {result}")
 
-        # 打印结果的属性
-        if result.is_success():
-            print(f"  Round trip time: {result.duration_ms} ms")
-
         time.sleep(0.5)  # 短暂延迟
 
 
-async def sync_stream_example():
-    """异步 Ping 流示例"""
+def sync_stream_example():
+    """同步 Ping 流示例"""
 
     # 创建 ping 流
     stream = create_ping_stream("8.8.8.8", interval_ms=1000, count=5)
 
-    # 异步接收几个结果
+    # 同步接收几个结果
     i = 0
     for result in stream:
         print(f"Sync stream result {i + 1}: {result}")
@@ -109,10 +105,6 @@ async def async_ping_stream_example():
         print(f"Native async stream result {i + 1}: {result}")
         i += 1
 
-        # 打印结果的详细信息
-        if result.is_success():
-            print(f"  Round trip time: {result.duration_ms} ms")
-
 
 if __name__ == "__main__":
     # 运行同步示例
@@ -129,7 +121,7 @@ if __name__ == "__main__":
 
     # 运行异步流示例
     print("\n=== 运行迭代器形式流示例 ===")
-    asyncio.run(sync_stream_example())
+    sync_stream_example()
 
     # 运行原生异步流示例
     print("\n=== 运行原生异步流示例 ===")
