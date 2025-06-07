@@ -105,6 +105,22 @@ while stream.is_active():
     time.sleep(0.1)  # Small delay to avoid busy waiting
 ```
 
+### Using PingStream as Iterator
+
+```python
+from ping_rs import create_ping_stream
+
+# Create a ping stream with a maximum number of 5 pings
+stream = create_ping_stream("google.com", count=5)
+
+# Process results using for loop (blocks until each result is available)
+for i, result in enumerate(stream):
+    if result.is_success():
+        print(f"Ping {i+1}: {result.duration_ms} ms")
+    else:
+        print(f"Ping {i+1}: Failed with {result.type_name}")
+```
+
 ## API Reference
 
 ### Functions
@@ -147,6 +163,15 @@ Non-blocking ping stream processor.
 - `try_recv()`: Try to receive the next ping result without blocking
 - `recv()`: Receive the next ping result, blocking if necessary
 - `is_active()`: Check if the stream is still active
+- `__iter__` and `__next__`: Support for using PingStream as an iterator in a for loop
+
+#### AsyncPingStream
+
+Async ping stream processor with native async/await support.
+
+- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, max_count=None)`: Initialize an AsyncPingStream
+- `__aiter__()`: Return self as an async iterator
+- `__anext__()`: Get the next ping result asynchronously
 
 ## Development
 
@@ -176,6 +201,27 @@ match result:
 result = ping_once("google.com")
 result_dict = result.to_dict()
 print(result_dict)  # {'type': 'Pong', 'duration_ms': 15.2, 'line': 'Reply from...'}
+```
+
+#### Using AsyncPingStream for Native Async Iteration
+
+```python
+import asyncio
+from ping_rs import AsyncPingStream
+
+async def ping_async_stream():
+    # Create an async ping stream with a maximum of 5 pings
+    stream = AsyncPingStream("google.com", interval_ms=1000, max_count=5)
+
+    # Process results using async for loop
+    async for result in stream:
+        if result.is_success():
+            print(f"Ping successful: {result.duration_ms} ms")
+        else:
+            print(f"Ping failed: {result.type_name}")
+
+# Run the async function
+asyncio.run(ping_async_stream())
 ```
 
 #### PingResult Types

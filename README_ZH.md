@@ -105,6 +105,22 @@ while stream.is_active():
     time.sleep(0.1)  # 小延迟，避免忙等待
 ```
 
+### 将 PingStream 用作迭代器
+
+```python
+from ping_rs import create_ping_stream
+
+# 创建最大执行 5 次 ping 的流
+stream = create_ping_stream("google.com", count=5)
+
+# 使用 for 循环处理结果（阻塞直到每个结果可用）
+for i, result in enumerate(stream):
+    if result.is_success():
+        print(f"Ping {i+1}: {result.duration_ms} ms")
+    else:
+        print(f"Ping {i+1}: 失败，类型为 {result.type_name}")
+```
+
 ## API 参考
 
 ### 函数
@@ -147,6 +163,15 @@ while stream.is_active():
 - `try_recv()`: 尝试接收下一个 ping 结果，不阻塞
 - `recv()`: 接收下一个 ping 结果，如有必要则阻塞
 - `is_active()`: 检查流是否仍处于活动状态
+- `__iter__` 和 `__next__`: 支持在 for 循环中使用 PingStream 作为迭代器
+
+#### AsyncPingStream
+
+支持原生 async/await 的异步 ping 流处理器。
+
+- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, max_count=None)`: 初始化 AsyncPingStream
+- `__aiter__()`: 将自身作为异步迭代器返回
+- `__anext__()`: 异步获取下一个 ping 结果
 
 ## 开发
 
@@ -176,6 +201,27 @@ match result:
 result = ping_once("google.com")
 result_dict = result.to_dict()
 print(result_dict)  # {'type': 'Pong', 'duration_ms': 15.2, 'line': 'Reply from...'}
+```
+
+#### 使用 AsyncPingStream 进行原生异步迭代
+
+```python
+import asyncio
+from ping_rs import AsyncPingStream
+
+async def ping_async_stream():
+    # 创建一个最多执行 5 次 ping 的异步流
+    stream = AsyncPingStream("google.com", interval_ms=1000, max_count=5)
+
+    # 使用异步 for 循环处理结果
+    async for result in stream:
+        if result.is_success():
+            print(f"Ping 成功: {result.duration_ms} ms")
+        else:
+            print(f"Ping 失败: {result.type_name}")
+
+# 运行异步函数
+asyncio.run(ping_async_stream())
 ```
 
 #### PingResult 类型
