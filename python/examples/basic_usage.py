@@ -7,6 +7,7 @@ import time
 from ipaddress import IPv4Address
 
 from ping_rs import (
+    AsyncPinger,
     AsyncPingStream,
     Pinger,
     create_ping_stream,
@@ -58,8 +59,8 @@ async def async_examples():
     print(f"Async multiple pings took: {time.time() - start:.2f} seconds")
 
     # 使用 Pinger 类的异步方法
-    pinger = Pinger("8.8.8.8")
-    result = await pinger.ping_once_async()
+    pinger = AsyncPinger("8.8.8.8")
+    result = await pinger.ping_once()
     print(f"Async pinger result: {result}")
 
 

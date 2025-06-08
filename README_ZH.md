@@ -129,7 +129,7 @@ for i, result in enumerate(stream):
 - `ping_once_async(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False)`: 异步执行单次 ping 操作
 - `ping_multiple(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: 同步执行多次 ping 操作
 - `ping_multiple_async(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: 异步执行多次 ping 操作
-- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False)`: 创建非阻塞 ping 流
+- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, count=None)`: 创建非阻塞 ping 流
 
 ### 类
 
@@ -150,11 +150,19 @@ for i, result in enumerate(stream):
 
 #### Pinger
 
-高级 ping 接口。
+高级同步 ping 接口。
 
 - `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False)`: 初始化 Pinger
 - `ping_once()`: 同步执行单次 ping
-- `ping_stream(count=None)`: 异步执行多次 ping
+- `ping_multiple(count=4, timeout_ms=None)`: 同步执行多次 ping
+
+#### AsyncPinger
+
+高级异步 ping 接口。
+
+- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False)`: 初始化 AsyncPinger
+- `ping_once()`: 异步执行单次 ping
+- `ping_multiple(count=4, timeout_ms=None)`: 异步执行多次 ping
 
 #### PingStream
 

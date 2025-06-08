@@ -129,7 +129,7 @@ for i, result in enumerate(stream):
 - `ping_once_async(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False)`: Execute a single ping operation asynchronously
 - `ping_multiple(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: Execute multiple pings synchronously
 - `ping_multiple_async(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: Execute multiple pings asynchronously
-- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False)`: Create a non-blocking ping stream
+- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, count=None)`: Create a non-blocking ping stream
 
 ### Classes
 
@@ -155,6 +155,14 @@ High-level ping interface.
 - `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False)`: Initialize a Pinger
 - `ping_once()`: Execute a single ping synchronously
 - `ping_stream(count=None)`: Execute multiple pings asynchronously
+
+#### AsyncPinger
+
+High-level async ping interface.
+
+- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False)`: Initialize an AsyncPinger
+- `ping_once()`: Execute a single ping asynchronously
+- `ping_multiple(count=4, timeout_ms=None)`: Execute multiple pings asynchronously
 
 #### PingStream
 

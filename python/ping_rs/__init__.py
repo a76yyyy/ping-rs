@@ -6,6 +6,7 @@ and asynchronous interfaces, leveraging Rust's performance and safety.
 """
 
 from ping_rs._ping_rs import (
+    AsyncPinger,
     AsyncPingStream,
     Pinger,
     PingResult,
@@ -28,10 +29,11 @@ from ping_rs.core_schema import (
 
 __all__ = [
     # 从 Rust 核心导出的类和函数
+    "AsyncPinger",
     "AsyncPingStream",
-    "PingResult",
     "Pinger",
     "PingStream",
+    "PingResult",
     "__version__",
     "create_ping_stream",
     "ping_once",
