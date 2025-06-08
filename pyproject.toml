@@ -57,6 +57,7 @@ testing = [
     'pytest-mock',
     'pytest-pretty',
     'pytest-run-parallel',
+    "pytest-xdist[psutil]"
 ]
 linting = [{ include-group = "dev" }, "griffe", "black>=23.0", "ruff>=0.1.0", "mypy>=1.0"]
 codspeed = [

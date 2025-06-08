@@ -101,7 +101,7 @@ jobs:
 
       - run: uv pip freeze
 
-      - run: uv run pytest
+      - run: uv run pytest -n logical
         env:
           HYPOTHESIS_PROFILE: slow
           PYTEST_ADDOPTS: ${{ endsWith(matrix.python-version, 't') && '--parallel-threads=2' || '' }}
@@ -136,7 +136,7 @@ jobs:
 
       - run: uv pip freeze
 
-      - run: uv run pytest
+      - run: uv run pytest -n logical
 
       - run: cargo test
 
@@ -171,7 +171,7 @@ jobs:
 
       - run: uv pip freeze
 
-      - run: uv run pytest
+      - run: uv run pytest -n logical
 
       - run: cargo test
 
@@ -206,7 +206,7 @@ jobs:
       - run: make build-dev
 
       - run: uv pip freeze
-      - run: uv run pytest
+      - run: uv run pytest -n logical
 
   lint:
     runs-on: ubuntu-latest
@@ -497,7 +497,7 @@ jobs:
             source $HOME/.local/bin/env
             uv sync --frozen --group testing --no-install-project
             uv pip install ping-rs --no-index --no-deps --find-links dist --force-reinstall
-            uv run --no-sync pytest
+            uv run --no-sync pytest -n logical
             uv run --no-sync python -c 'import ping_rs._ping_rs; print(ping_rs._ping_rs.__version__)'
 
   test-builds-os:
@@ -525,7 +525,7 @@ jobs:
 
       - run: uv sync --group testing
       - run: uv pip install ping-rs --no-index --no-deps --find-links dist --force-reinstall
-      - run: uv run pytest
+      - run: uv run pytest -n logical
 
   release:
     needs: [test-builds-arch, test-builds-os, build-sdist, check]
