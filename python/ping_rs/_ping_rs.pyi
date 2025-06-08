@@ -9,6 +9,7 @@ __version__: str
 __all__ = [
     "PingResult",
     "Pinger",
+    "AsyncPinger",
     "PingStream",
     "AsyncPingStream",
     "__version__",
