@@ -3,7 +3,7 @@ use pinger::PingOptions;
 use std::net::{IpAddr, ToSocketAddrs};
 
 /// 处理IP地址解析和验证的工具函数
-pub fn resolve_ip(target: &str, is_ipv4: bool, is_ipv6: bool) -> Result<IpAddr, PingCreationError> {
+fn resolve_ip(target: &str, is_ipv4: bool, is_ipv6: bool) -> Result<IpAddr, PingCreationError> {
     // 解析目标地址
     let socket_addrs_result = (target.to_string(), 0).to_socket_addrs();
     if socket_addrs_result.is_err() {
