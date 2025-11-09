@@ -5,7 +5,6 @@ use crate::utils::validation::{validate_interval_ms, validate_timeout_ms};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
-use std::time::Duration;
 
 /// Python 包装的异步 Pinger 类
 #[pyclass]
@@ -53,21 +52,19 @@ impl AsyncPinger {
         future_into_py(py, async move {
             let options = create_ping_options(&target, interval_ms, interface, ipv4, ipv6);
 
-            // 在异步上下文中执行ping
-            let receiver = platform::execute_ping_async(options)
+            // 获取异步通道
+            let mut receiver = platform::execute_ping_async(options)
                 .await
                 .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
-            // 接收单个结果
-            tokio::task::spawn_blocking(move || {
-                let guard = receiver.lock().unwrap();
-                match guard.recv() {
-                    Ok(result) => Ok::<PingResult, pyo3::PyErr>(result.into()), // 指定类型参数
-                    Err(_) => Err(PyErr::new::<PyRuntimeError, _>("Failed to receive ping result")),
+            // ✅ 直接 await，无需 spawn_blocking
+            match receiver.recv().await {
+                Some(result) => {
+                    let ping_result: PingResult = result.into();
+                    Ok(ping_result)
                 }
-            })
-            .await
-            .unwrap_or_else(|e| Err(PyErr::new::<PyRuntimeError, _>(format!("Task error: {}", e))))
+                None => Err(PyErr::new::<PyRuntimeError, _>("Failed to receive ping result")),
+            }
         })
     }
 
@@ -95,8 +92,8 @@ impl AsyncPinger {
             let options = create_ping_options(&target, interval_ms, interface, ipv4, ipv6);
             let start_time = std::time::Instant::now();
 
-            // 在异步上下文中执行ping
-            let receiver = platform::execute_ping_async(options)
+            // 获取异步通道
+            let mut receiver = platform::execute_ping_async(options)
                 .await
                 .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
@@ -104,40 +101,28 @@ impl AsyncPinger {
             let mut received_count = 0;
 
             while received_count < count {
-                // 检查是否超时
+                // 检查总超时
                 if let Some(timeout_duration) = timeout {
                     if start_time.elapsed() >= timeout_duration {
                         break;
                     }
                 }
 
-                // 克隆接收器用于当前迭代
-                let receiver_clone = receiver.clone();
+                // ✅ 直接 await，无需 spawn_blocking
+                match receiver.recv().await {
+                    Some(result) => {
+                        let ping_result: PingResult = result.into();
+                        results.push(ping_result.clone());
 
-                // 使用线程池处理阻塞接收
-                let result = match tokio::task::spawn_blocking(move || {
-                    let guard = receiver_clone.lock().unwrap();
-                    guard.recv()
-                })
-                .await
-                {
-                    Ok(Ok(result)) => result,
-                    Ok(Err(e)) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Channel error: {}", e))),
-                    Err(e) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Task error: {}", e))),
-                };
+                        // 如果是退出信号，跳出循环
+                        if matches!(ping_result, PingResult::PingExited { .. }) {
+                            break;
+                        }
 
-                let ping_result: PingResult = result.into();
-                results.push(ping_result.clone());
-
-                // 如果是退出信号，跳出循环
-                if matches!(ping_result, PingResult::PingExited { .. }) {
-                    break;
+                        received_count += 1;
+                    }
+                    None => break, // 通道关闭
                 }
-
-                received_count += 1;
-
-                // 短暂等待避免过度占用CPU
-                tokio::time::sleep(Duration::from_millis(10)).await;
             }
 
             Ok(results)

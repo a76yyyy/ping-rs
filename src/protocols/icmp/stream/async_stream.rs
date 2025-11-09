@@ -7,35 +7,29 @@ use pinger::PingResult as RustPingResult;
 use pyo3::exceptions::{PyRuntimeError, PyStopAsyncIteration};
 use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
-use std::sync::mpsc;
 use std::sync::Arc;
 
-async fn next_ping_stream(receiver: Arc<std::sync::Mutex<mpsc::Receiver<RustPingResult>>>) -> PyResult<PingResult> {
-    let result = match tokio::task::spawn_blocking(move || {
-        let guard = receiver.lock().unwrap();
-        guard.recv()
-    })
-    .await
-    {
-        Ok(Ok(result)) => result,
-        Ok(Err(e)) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Channel error: {}", e))),
-        Err(e) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Task error: {}", e))),
-    };
+async fn next_ping_stream(receiver: &mut tokio::sync::mpsc::UnboundedReceiver<RustPingResult>) -> PyResult<PingResult> {
+    // ✅ 直接 await，无需 spawn_blocking
+    match receiver.recv().await {
+        Some(result) => {
+            let ping_result: PingResult = result.into();
 
-    let ping_result: PingResult = result.into();
-
-    // 如果是退出信号，跳出循环
-    if matches!(ping_result, PingResult::PingExited { .. }) {
-        Err(PyStopAsyncIteration::new_err("Stream exhausted"))
-    } else {
-        Ok(ping_result)
+            // 如果是退出信号，跳出循环
+            if matches!(ping_result, PingResult::PingExited { .. }) {
+                Err(PyStopAsyncIteration::new_err("Stream exhausted"))
+            } else {
+                Ok(ping_result)
+            }
+        }
+        None => Err(PyStopAsyncIteration::new_err("Stream exhausted")),
     }
 }
 
 // 为 AsyncPingStream 创建内部状态结构
 struct AsyncPingStreamState {
     options: PingOptions,
-    receiver: Option<Arc<std::sync::Mutex<mpsc::Receiver<RustPingResult>>>>,
+    receiver: Option<tokio::sync::mpsc::UnboundedReceiver<RustPingResult>>,
     max_count: Option<usize>,
     current_count: usize,
 }
@@ -108,23 +102,23 @@ impl AsyncPingStream {
                 }
             }
 
-            if let Some(receiver) = &state.receiver {
-                let result = next_ping_stream(receiver.clone()).await;
+            if let Some(receiver) = &mut state.receiver {
+                let result = next_ping_stream(receiver).await;
                 if result.is_ok() {
                     state.current_count += 1;
                 }
                 result
             } else {
                 // 如果接收器不存在，创建新的接收器
-                let receiver = platform::execute_ping_async(state.options.clone())
+                let mut receiver = platform::execute_ping_async(state.options.clone())
                     .await
                     .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
-                state.receiver = Some(receiver.clone());
-                let result = next_ping_stream(receiver).await;
+                let result = next_ping_stream(&mut receiver).await;
                 if result.is_ok() {
                     state.current_count += 1;
                 }
+                state.receiver = Some(receiver);
                 result
             }
         })
