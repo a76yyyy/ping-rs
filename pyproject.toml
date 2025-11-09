@@ -7,7 +7,6 @@ requires-python = ">=3.10"
 dependencies = []
 classifiers = [
     "Development Status :: 4 - Beta",
-    "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.10",
@@ -19,7 +18,6 @@ classifiers = [
     "Topic :: System :: Monitoring",
     'Intended Audience :: Developers',
     'Intended Audience :: Information Technology',
-    'License :: OSI Approved :: MIT License',
     'Operating System :: POSIX :: Linux',
     'Operating System :: Microsoft :: Windows',
     'Operating System :: MacOS',
@@ -44,10 +42,7 @@ requires = ["maturin>=1.0,<2.0"]
 build-backend = "maturin"
 
 [dependency-groups]
-dev = [
-    "maturin>=1.8.6",
-    "pre-commit>=4.2.0",
-]
+dev = ["maturin>=1.8.6", "pre-commit>=4.2.0"]
 testing = [
     { include-group = "dev" },
     "pytest>=7.0",
@@ -57,9 +52,15 @@ testing = [
     'pytest-mock',
     'pytest-pretty',
     'pytest-run-parallel',
-    "pytest-xdist"
+    "pytest-xdist",
 ]
-linting = [{ include-group = "dev" }, "griffe", "black>=23.0", "ruff>=0.1.0", "mypy>=1.0"]
+linting = [
+    { include-group = "dev" },
+    "griffe",
+    "black>=23.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+]
 codspeed = [
     # codspeed is only run on CI, with latest version of CPython
     'pytest-codspeed; python_version == "3.13" and implementation_name == "cpython"',
@@ -90,7 +91,6 @@ log_cli_format = "%(asctime)s [%(levelname)s] %(message)s (%(filename)s:%(lineno
 log_cli_date_format = "%Y-%m-%d %H:%M:%S"
 
 [tool.mypy]
-plugins = ['pydantic.mypy']
 mypy_path = "$MYPY_CONFIG_FILE_DIR"
 exclude = ["venv", ".venv", "alembic"]
 
@@ -191,7 +191,6 @@ docstring-code-line-length = "dynamic"
 [tool.ruff.lint.pyupgrade]
 # Preserve types, even if a file imports `from __future__ import annotations`.
 keep-runtime-typing = true
-
 
 [tool.coverage.run]
 source = ['ping_rs']
