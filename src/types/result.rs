@@ -105,7 +105,7 @@ impl PingResult {
     }
 
     /// 将 PingResult 转换为字典
-    pub fn to_dict(&self, py: Python) -> PyResult<PyObject> {
+    pub fn to_dict(&self, py: Python) -> PyResult<Py<PyAny>> {
         let dict = PyDict::new(py);
 
         match self {
