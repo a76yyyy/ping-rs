@@ -207,7 +207,7 @@ class AsyncPingStream:
 
 def ping_once(
     target: TargetType,
-    timeout_ms: int = 5000,
+    timeout_ms: int = 1000,
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
@@ -217,7 +217,7 @@ def ping_once(
 
 async def ping_once_async(
     target: TargetType,
-    timeout_ms: int = 5000,
+    timeout_ms: int = 1000,
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
