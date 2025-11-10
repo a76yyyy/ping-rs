@@ -72,7 +72,7 @@ async def test_ping_multiple_async_timeout(target: TargetType, timeout_ms: int):
     start_time = time.time()
 
     # 设置超时时间为 3 秒，但请求 10 个结果
-    # 由于每个 ping 间隔为 1 秒，所以应该在超时前只能获取到约 3 个结果
+    # 由于每个 ping 间隔为 0.5 秒，所以应该在超时前只能获取到约 6 个结果
     results = await ping_multiple_async(target, count=count, interval_ms=interval_ms, timeout_ms=timeout_ms)
 
     end_time = time.time()
