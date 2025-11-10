@@ -32,36 +32,30 @@ pub fn calculate_timeout_info(
         return (false, Some(timeout_duration - elapsed), None);
     }
 
-    // 已经超过 timeout，计算是否需要宽限期
-    let interval_duration = Duration::from_millis(interval_ms);
-
-    // 计算最后一个"应该已经发送"的包的序号（从0开始）
-    // 使用 (elapsed - 1) 来避免边界问题
-    let last_sent_seq = if elapsed.as_millis() > 0 {
+    // 已经超过 timeout，计算最后一个已完成等待的包
+    // 计算最后一个"已经完成等待"的包的序号（从0开始）
+    // 在时刻 t,已经完成等待的包是那些发送时间 <= t - interval 的包
+    // 例如: t=3000ms, interval=500ms
+    //   - seq 0 在 0ms 发送,在 500ms 完成等待
+    //   - seq 5 在 2500ms 发送,在 3000ms 完成等待
+    //   - seq 6 在 3000ms 发送,还在等待中
+    // 所以 last_completed_seq = (3000 - 1) / 500 = 5
+    let last_completed_seq = if elapsed.as_millis() > 0 {
         ((elapsed.as_millis() - 1) / interval_ms as u128) as usize
     } else {
         0
     };
-    let last_sent_seq = last_sent_seq.min(count - 1);
+    let last_completed_seq = last_completed_seq.min(count - 1);
 
-    // 最后一个包的理论发送时间
-    let last_sent_time = start_time + interval_duration * last_sent_seq as u32;
-
-    // 应该等到的时间 = 最后发送时间 + interval（给响应时间）
-    let grace_deadline = last_sent_time + interval_duration;
-
-    if now >= grace_deadline {
-        // 已经过了宽限期
-        let timeout_result = if received_count <= last_sent_seq {
-            Some(PingResult::Timeout {
-                line: format!("Request timeout for icmp_seq {}", last_sent_seq),
-            })
-        } else {
-            None
-        };
-        (true, None, timeout_result)
-    } else {
-        // 还在宽限期内，继续等待
-        (false, Some(grace_deadline - now), None)
+    // 如果已经收到了所有应该完成的包,就不需要超时结果
+    if received_count > last_completed_seq {
+        return (true, None, None);
     }
+
+    // 构造超时结果
+    let timeout_result = Some(PingResult::Timeout {
+        line: format!("Request timeout for icmp_seq {}", last_completed_seq),
+    });
+
+    (true, None, timeout_result)
 }
