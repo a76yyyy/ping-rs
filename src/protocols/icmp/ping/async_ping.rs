@@ -5,6 +5,9 @@ use crate::utils::validation::{validate_interval_ms, validate_timeout_ms};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
+use std::time::Instant;
+
+use super::helpers::calculate_timeout_info;
 
 /// Python 包装的异步 Pinger 类
 #[pyclass]
@@ -52,18 +55,29 @@ impl AsyncPinger {
         future_into_py(py, async move {
             let options = create_ping_options(&target, interval_ms, interface, ipv4, ipv6);
 
+            let interval_duration = std::time::Duration::from_millis(interval_ms);
+
             // 获取异步通道
             let mut receiver = platform::execute_ping_async(options)
                 .await
                 .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
-            // ✅ 直接 await，无需 spawn_blocking
-            match receiver.recv().await {
-                Some(result) => {
+            // 使用 interval 作为超时时间（单次 ping 的最大等待时间）
+            match tokio::time::timeout(interval_duration, receiver.recv()).await {
+                Ok(Some(result)) => {
                     let ping_result: PingResult = result.into();
                     Ok(ping_result)
                 }
-                None => Err(PyErr::new::<PyRuntimeError, _>("Failed to receive ping result")),
+                Ok(None) => {
+                    // 通道关闭，可能是进程异常退出
+                    Err(PyErr::new::<PyRuntimeError, _>("Ping process exited unexpectedly"))
+                }
+                Err(_) => {
+                    // 超时
+                    Ok(PingResult::Timeout {
+                        line: "Request timeout for icmp_seq 0".to_string(),
+                    })
+                }
             }
         })
     }
@@ -89,8 +103,9 @@ impl AsyncPinger {
         let ipv6 = self.ipv6;
 
         future_into_py(py, async move {
+            // 不传递 count 给底层 ping 命令，由 Rust 层控制接收数量
             let options = create_ping_options(&target, interval_ms, interface, ipv4, ipv6);
-            let start_time = std::time::Instant::now();
+            let start_time = Instant::now();
 
             // 获取异步通道
             let mut receiver = platform::execute_ping_async(options)
@@ -101,27 +116,62 @@ impl AsyncPinger {
             let mut received_count = 0;
 
             while received_count < count {
-                // 检查总超时
-                if let Some(timeout_duration) = timeout {
-                    if start_time.elapsed() >= timeout_duration {
+                // 计算剩余时间，支持 interval 浮动
+                let remaining_time = if let Some(timeout_duration) = timeout {
+                    let (should_timeout, remaining, timeout_result) =
+                        calculate_timeout_info(start_time, timeout_duration, interval_ms, count, received_count);
+
+                    if should_timeout {
+                        // 已经过了宽限期
+                        if let Some(result) = timeout_result {
+                            results.push(result);
+                        }
                         break;
                     }
-                }
+                    remaining
+                } else {
+                    // 没有设置 timeout，无限等待
+                    None
+                };
 
-                // ✅ 直接 await，无需 spawn_blocking
-                match receiver.recv().await {
-                    Some(result) => {
+                // 使用 timeout 等待下一个结果
+                let recv_result = if let Some(timeout_dur) = remaining_time {
+                    tokio::time::timeout(timeout_dur, receiver.recv()).await
+                } else {
+                    Ok(receiver.recv().await)
+                };
+
+                match recv_result {
+                    Ok(Some(result)) => {
                         let ping_result: PingResult = result.into();
-                        results.push(ping_result.clone());
 
-                        // 如果是退出信号，跳出循环
+                        // 处理 PingExited
                         if matches!(ping_result, PingResult::PingExited { .. }) {
+                            results.push(ping_result);
                             break;
                         }
 
+                        results.push(ping_result);
                         received_count += 1;
                     }
-                    None => break, // 通道关闭
+                    Ok(None) => break, // 通道关闭
+                    Err(_) => {
+                        // 超时，检查是否需要构造最后一个包的 Timeout
+                        if let Some(timeout_duration) = timeout {
+                            let (_, _, timeout_result) = calculate_timeout_info(
+                                start_time,
+                                timeout_duration,
+                                interval_ms,
+                                count,
+                                received_count,
+                            );
+
+                            if let Some(result) = timeout_result {
+                                results.push(result);
+                            }
+                        }
+                        break;
+                    }
                 }
             }
 

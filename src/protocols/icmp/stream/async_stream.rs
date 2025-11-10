@@ -64,7 +64,8 @@ impl AsyncPingStream {
             crate::utils::validation::validate_count(count.try_into().unwrap(), "max_count")?;
         }
 
-        // 创建 ping 选项
+        // 创建 ping 选项（不传递 count 给底层 ping 命令）
+        // max_count 参数保存在 state 中，在 __anext__ 迭代时由 Rust 层控制
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);
 
         // 创建内部状态

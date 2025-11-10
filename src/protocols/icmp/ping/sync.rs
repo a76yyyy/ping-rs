@@ -5,6 +5,8 @@ use crate::utils::validation::{validate_interval_ms, validate_timeout_ms};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 
+use super::helpers::calculate_timeout_info;
+
 /// Python 包装的 Pinger 类
 #[pyclass]
 pub struct Pinger {
@@ -54,10 +56,25 @@ impl Pinger {
         let receiver = platform::execute_ping(options)
             .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
 
-        // 等待第一个结果
-        match receiver.recv() {
-            Ok(result) => Ok(result.into()),
-            Err(_) => Err(PyErr::new::<PyRuntimeError, _>("Failed to receive ping result")),
+        // 使用 interval 作为超时时间
+        let timeout = std::time::Duration::from_millis(self.interval_ms);
+
+        // 等待第一个结果（带超时）
+        match receiver.recv_timeout(timeout) {
+            Ok(result) => {
+                let ping_result: PingResult = result.into();
+                Ok(ping_result)
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                // 超时，主动构造 Timeout 结果
+                Ok(PingResult::Timeout {
+                    line: "Request timeout for icmp_seq 0".to_string(),
+                })
+            }
+            Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                // 通道断开，可能是进程异常退出
+                Err(PyErr::new::<PyRuntimeError, _>("Ping process disconnected"))
+            }
         }
     }
 
@@ -70,6 +87,7 @@ impl Pinger {
         // 验证 timeout_ms 参数
         let timeout = validate_timeout_ms(timeout_ms, self.interval_ms, "timeout_ms")?;
 
+        // 不传递 count 给底层 ping 命令，由 Rust 层控制接收数量
         let options = create_ping_options(
             &self.target,
             self.interval_ms,
@@ -86,27 +104,73 @@ impl Pinger {
         let mut received_count = 0;
         let start_time = std::time::Instant::now();
 
-        while let Ok(result) = receiver.recv() {
-            let ping_result: PingResult = result.into();
-
-            // 添加到结果列表
-            results.push(ping_result.clone());
-
-            // 如果是退出信号，跳出循环
-            if matches!(ping_result, PingResult::PingExited { .. }) {
-                break;
-            }
-
-            received_count += 1;
-
+        loop {
             // 检查是否达到指定数量
             if received_count >= count {
                 break;
             }
 
-            // 检查是否超时
-            if let Some(timeout_duration) = timeout {
-                if start_time.elapsed() >= timeout_duration {
+            // 计算剩余时间
+            let remaining_timeout = if let Some(timeout_duration) = timeout {
+                let (should_timeout, remaining, timeout_result) =
+                    calculate_timeout_info(start_time, timeout_duration, self.interval_ms, count, received_count);
+
+                if should_timeout {
+                    // 已经过了宽限期
+                    if let Some(result) = timeout_result {
+                        results.push(result);
+                    }
+                    break;
+                }
+                remaining
+            } else {
+                // 没有设置 timeout，使用一个较大的值
+                Some(std::time::Duration::from_secs(3600))
+            };
+
+            // 等待下一个结果（带超时）
+            let recv_result = if let Some(timeout_dur) = remaining_timeout {
+                receiver.recv_timeout(timeout_dur)
+            } else {
+                receiver
+                    .recv()
+                    .map_err(|_| std::sync::mpsc::RecvTimeoutError::Disconnected)
+            };
+
+            match recv_result {
+                Ok(result) => {
+                    let ping_result: PingResult = result.into();
+
+                    // 如果收到 PingExited，说明进程异常退出（因为我们不使用 -c 参数）
+                    // 这通常表示网络错误或权限问题
+                    if matches!(ping_result, PingResult::PingExited { .. }) {
+                        results.push(ping_result);
+                        break;
+                    }
+
+                    // 添加到结果列表
+                    results.push(ping_result);
+                    received_count += 1;
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Timeout) => {
+                    // 超时，检查是否需要构造最后一个包的 Timeout
+                    if let Some(timeout_duration) = timeout {
+                        let (_, _, timeout_result) = calculate_timeout_info(
+                            start_time,
+                            timeout_duration,
+                            self.interval_ms,
+                            count,
+                            received_count,
+                        );
+
+                        if let Some(result) = timeout_result {
+                            results.push(result);
+                        }
+                    }
+                    break;
+                }
+                Err(std::sync::mpsc::RecvTimeoutError::Disconnected) => {
+                    // 通道断开，退出循环
                     break;
                 }
             }

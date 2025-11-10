@@ -19,36 +19,23 @@ pub fn execute_ping(options: PingOptions) -> Result<mpsc::Receiver<PingResult>, 
     }
 }
 
-/// 异步执行ping操作，在支持的平台上使用纯异步实现，否则使用兼容的方式
+/// 异步执行ping操作，在支持的平台上使用纯异步实现
 /// 为异步操作提供基础
 ///
-/// 返回 tokio 异步通道，避免在上层频繁使用 spawn_blocking
+/// 返回 tokio 异步通道（unbounded）
 pub async fn execute_ping_async(
     options: PingOptions,
 ) -> Result<tokio::sync::mpsc::UnboundedReceiver<PingResult>, pinger::PingCreationError> {
     // 在Windows平台使用优化的异步实现
     #[cfg(target_os = "windows")]
     {
-        // Windows 平台直接返回 tokio 通道
         windows::ping_async(options).await
     }
 
-    // 在其他平台上使用标准实现，通过一次 spawn_blocking 转换为 tokio 通道
+    // 在其他平台上使用 pinger::ping_async()
     #[cfg(not(target_os = "windows"))]
     {
-        let receiver = execute_ping(options)?;
-        let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
-
-        // ✅ 只需要一次 spawn_blocking，在后台持续转发消息
-        tokio::task::spawn_blocking(move || {
-            while let Ok(result) = receiver.recv() {
-                // 当发送失败，说明接收端已关闭，退出循环
-                if tx.send(result).is_err() {
-                    break;
-                }
-            }
-        });
-
-        Ok(rx)
+        // 直接返回 pinger 的 unbounded receiver，无需转发
+        pinger::ping_async(options).await
     }
 }

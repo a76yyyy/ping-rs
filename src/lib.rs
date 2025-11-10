@@ -31,8 +31,12 @@ fn create_ping_stream(
 }
 
 /// 执行单次 ping（同步版本）
+///
+/// # 参数
+/// - `timeout_ms`: 等待响应的超时时间（毫秒），默认 1000ms
+///   注意：内部实现中，这个值会被用作 interval_ms 传递给底层 ping 命令
 #[pyfunction]
-#[pyo3(signature = (target, timeout_ms=5000, interface=None, ipv4=false, ipv6=false))]
+#[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false))]
 fn ping_once(
     target: &Bound<PyAny>,
     timeout_ms: i64,
@@ -41,6 +45,7 @@ fn ping_once(
     ipv6: bool,
 ) -> PyResult<PingResult> {
     // 创建 Pinger 实例
+    // 注意：这里将 timeout_ms 作为 interval_ms 传递，因为 ping_once 中会将其用作超时时间
     let pinger = Pinger::new(target, timeout_ms, interface, ipv4, ipv6)?;
 
     // 执行 ping_once
@@ -48,8 +53,12 @@ fn ping_once(
 }
 
 /// 执行单次 ping（异步版本）
+///
+/// # 参数
+/// - `timeout_ms`: 等待响应的超时时间（毫秒），默认 1000ms
+///   注意：内部实现中，这个值会被用作 interval_ms 传递给底层 ping 命令
 #[pyfunction]
-#[pyo3(signature = (target, timeout_ms=5000, interface=None, ipv4=false, ipv6=false))]
+#[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false))]
 fn ping_once_async<'py>(
     py: Python<'py>,
     target: &Bound<PyAny>,
@@ -59,6 +68,7 @@ fn ping_once_async<'py>(
     ipv6: bool,
 ) -> PyResult<Bound<'py, PyAny>> {
     // 创建 AsyncPinger 实例
+    // 注意：这里将 timeout_ms 作为 interval_ms 传递，因为 ping_once 中会将其用作超时时间
     let pinger = AsyncPinger::new(target, timeout_ms, interface, ipv4, ipv6)?;
 
     // 执行异步 ping_once
