@@ -4,6 +4,7 @@
 
 import asyncio
 import logging
+import math
 import time
 
 import pytest
@@ -62,11 +63,10 @@ async def test_ping_once_async_timeout(target: TargetType, timeout_ms: int):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("target", ["33.254.254.254"])
-@pytest.mark.parametrize("timeout_ms", [1000, 2000, 3000])
+@pytest.mark.parametrize("timeout_ms", [1000, 2000, 3000, 3200])
 async def test_ping_multiple_async_timeout(target: TargetType, timeout_ms: int):
     """测试异步多次 ping 的超时功能"""
     count = 10
-    timeout_ms = 3000
     interval_ms = 500
 
     start_time = time.time()
@@ -82,13 +82,20 @@ async def test_ping_multiple_async_timeout(target: TargetType, timeout_ms: int):
     assert results is not None
     assert isinstance(results, list)
     assert len(results) < count  # 由于超时，应该获取不到所有结果
+    assert all(result.is_timeout() for result in results)  # 所有的结果都应该超时
+    # 向上取整 timeout_ms / interval_ms
+    expect_length = math.ceil(timeout_ms / interval_ms)
+    assert len(results) == expect_length
 
     # 验证执行时间接近超时时间
     assert elapsed_time <= timeout_ms + interval_ms * 2  # 允许一些额外时间用于处理
 
     # 打印结果（可选）
-    logger.info(f"请求了 {count} 个结果，但由于 {timeout_ms} 毫秒超时，实际获取到 {len(results)} 个结果")
-    logger.info(f"实际耗时: {elapsed_time:.2f} ms")
+    logger.info(
+        f"请求了 {count} 个结果, 但由于 {timeout_ms} 毫秒超时, "
+        f"期望获取到 {expect_length} 个结果, 实际获取到 {len(results)} 个结果, "
+        f"实际耗时: {elapsed_time:.2f} ms"
+    )
 
 
 @pytest.mark.parametrize("target", ["33.254.254.254"])
@@ -219,6 +226,30 @@ async def test_timeout_with_concurrency():
     _ = await asyncio.gather(*tasks)
     end = time.perf_counter()
     assert end - start < 6
+
+
+# 测试慢响应场景下的超时
+@pytest.mark.asyncio
+async def test_timeout_with_slow_response():
+    """
+    测试慢响应场景下的超时
+
+    验证：如果某个 ping 响应很慢，是否能及时超时
+    """
+    target = "33.254.254.254"  # 公网地址，可能响应慢
+    timeout_ms = 2000  # 2秒超时 (必须 >= interval_ms 1000ms)
+    count = 5
+
+    start_time = time.time()
+
+    results = await ping_multiple_async(target, count=count, timeout_ms=timeout_ms)
+
+    elapsed = time.time() - start_time
+
+    logger.info(f"慢响应测试: {len(results)} 个结果, 耗时={elapsed:.2f}s")
+
+    # 验证超时时间合理 (应该在 2-3 秒内完成)
+    assert elapsed < 3.0, f"超时时间过长: {elapsed:.2f}s"
 
 
 if __name__ == "__main__":

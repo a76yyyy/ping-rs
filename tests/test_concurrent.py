@@ -5,10 +5,12 @@
 import asyncio
 import logging
 import time
+from collections.abc import Coroutine
 from ipaddress import ip_address
+from typing import Any
 
 import pytest
-from ping_rs import ping_multiple_async
+from ping_rs import AsyncPingStream, PingResult, ping_multiple_async, ping_once_async
 from ping_rs.core_schema import TargetType
 
 logger = logging.getLogger(__name__)
@@ -162,6 +164,245 @@ async def test_error_handling():
     # 大多数情况下应该失败
     assert success_count == 0
     assert failure_count == 1
+
+
+# ============================================================================
+# 性能和压力测试
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_async_stream_performance() -> None:
+    """
+    测试异步流的性能
+
+    验证：异步流能否高效处理大量结果
+    """
+    target = "127.0.0.1"
+    max_count = 100
+
+    stream = AsyncPingStream(target, interval_ms=100, max_count=max_count)
+
+    start_time = time.time()
+    results: list[PingResult] = []
+
+    async for result in stream:
+        results.append(result)
+
+    elapsed = time.time() - start_time
+
+    # 验证结果
+    assert len(results) == max_count
+
+    logger.info(f"异步流测试: {len(results)} 个结果, 耗时={elapsed:.2f}s")
+
+    # 性能断言
+    if elapsed < 15:  # 100 * 0.1s = 10s + 5s 缓冲
+        logger.info("✅ 异步流性能良好")
+    else:
+        logger.warning(f"⚠️ 异步流性能较差 ({elapsed:.2f}s)")
+
+
+# ============================================================================
+# 内存和背压测试
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_memory_usage_unbounded_channel():
+    """
+    测试无界通道的内存使用
+
+    验证：无界通道在背压场景下是否会导致内存溢出
+    注意：这个测试只能间接验证，真正的内存测试需要监控工具
+    """
+    target = "127.0.0.1"
+
+    # 创建多个长时间运行的流 (interval_ms 最小为 100ms)
+    streams = [AsyncPingStream(target, interval_ms=100, max_count=100) for _ in range(10)]
+
+    # 慢速消费
+    async def slow_consumer(stream: AsyncPingStream):
+        results: list[PingResult] = []
+        count = 0
+        async for result in stream:
+            results.append(result)
+            count += 1
+            if count % 100 == 0:
+                await asyncio.sleep(0.1)  # 模拟慢速消费
+        return results
+
+    start_time = time.time()
+
+    # 并发运行所有流
+    tasks = [slow_consumer(stream) for stream in streams]
+    results = await asyncio.gather(*tasks)
+
+    elapsed = time.time() - start_time
+
+    # 验证结果
+    total_results = sum(len(r) for r in results)
+    logger.info(f"内存测试: {total_results} 个结果, 耗时={elapsed:.2f}s")
+
+    # 应该能正常完成 (10个流 × 100个结果 = 1000)
+    assert total_results == 1000, f"结果数量不对: {total_results}"
+
+    logger.info("✅ 内存测试通过，无界通道能正常处理")
+
+
+@pytest.mark.asyncio
+async def test_backpressure_handling() -> None:
+    """
+    测试背压处理
+
+    验证：生产速度 > 消费速度时，无界通道是否会导致内存问题
+    预期：应该能正常处理，但可能会有内存增长
+    """
+    target = "127.0.0.1"
+
+    # 创建一个快速生产的流 (interval_ms 最小为 100ms)
+    stream = AsyncPingStream(target, interval_ms=100, max_count=100)
+
+    results: list[PingResult] = []
+    start_time = time.time()
+
+    # 慢速消费
+    async for result in stream:
+        results.append(result)
+        if len(results) % 50 == 0:
+            await asyncio.sleep(0.5)  # 每 50 个结果暂停一下
+
+    elapsed = time.time() - start_time
+
+    logger.info(f"背压测试: {len(results)} 个结果, 耗时={elapsed:.2f}s")
+
+    # 验证结果完整
+    assert len(results) == 100
+
+    # 如果有背压，总时间应该受消费速度影响
+    # 100 个结果，每 50 个暂停 0.5s，至少需要 1s (暂停时间) + 10s (ping时间)
+    if elapsed >= 10.5:
+        logger.info("✅ 背压机制可能正常工作")
+    else:
+        logger.warning(f"⚠️ 背压机制可能不完善 ({elapsed:.2f}s)")
+
+
+# ============================================================================
+# 综合压力测试
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_comprehensive_stress_test() -> None:
+    """
+    综合压力测试
+
+    测试多种操作在高压力场景下的表现
+    """
+    target = "127.0.0.1"
+
+    # 创建多种类型的任务
+    tasks: list[Coroutine[Any, Any, PingResult] | Coroutine[Any, Any, list[PingResult]]] = []  # pyright: ignore[reportExplicitAny]
+
+    # 1. 多个 ping_once
+    tasks.extend([ping_once_async(target, timeout_ms=5000) for _ in range(50)])
+
+    # 2. 多个 ping_multiple
+    tasks.extend([ping_multiple_async(target, count=20, interval_ms=100) for _ in range(10)])
+
+    # 3. 异步流
+    async def consume_stream() -> list[PingResult]:
+        stream = AsyncPingStream(target, interval_ms=100, max_count=30)
+        results: list[PingResult] = []
+        async for result in stream:
+            results.append(result)
+        return results
+
+    tasks.extend([consume_stream() for _ in range(5)])
+
+    start_time = time.time()
+
+    # 执行所有任务
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+
+    elapsed = time.time() - start_time
+
+    # 统计结果
+    success_count = sum(1 for r in results if not isinstance(r, Exception))
+    error_count = sum(1 for r in results if isinstance(r, Exception))
+
+    logger.info(f"综合压力测试: 成功={success_count}, 失败={error_count}, 耗时={elapsed:.2f}s")
+
+    # 验证大部分任务成功
+    assert success_count > 60, f"成功率过低: {success_count}/{len(tasks)}"
+
+    # 性能评估
+    if elapsed < 30:
+        logger.info("✅ 综合性能良好")
+    else:
+        logger.warning(f"⚠️ 综合性能较差 ({elapsed:.2f}s)")
+
+
+# ============================================================================
+# 性能基准测试
+# ============================================================================
+
+
+@pytest.mark.asyncio
+async def test_performance_baseline() -> None:
+    """
+    性能基准测试
+
+    用于对比不同场景下的性能差异
+
+    注意: 使用 time.perf_counter() 而不是 time.time() 以获得更高精度
+    """
+    target = "127.0.0.1"
+
+    # 测试 1: 单个 ping 延迟 (使用高精度计时器)
+    start = time.perf_counter()
+    _ = [await ping_once_async(target, timeout_ms=5000) for _ in range(100)]
+    single_ping_latency = (time.perf_counter() - start) * 1000 / 100  # 转换为毫秒
+
+    # 测试 2: 100 个 ping 的总时间
+    start = time.perf_counter()
+    _ = await ping_multiple_async(target, count=100, interval_ms=100)
+    multiple_ping_time = time.perf_counter() - start
+
+    # 测试 3: 并发性能
+    start = time.perf_counter()
+    _ = await asyncio.gather(*[ping_once_async(target, timeout_ms=5000) for _ in range(100)])
+    concurrent_time = time.perf_counter() - start
+
+    # 输出基准数据
+    logger.info("=" * 60)
+    logger.info("性能基准测试结果:")
+    logger.info(f"  单个 ping 延迟: {single_ping_latency:.2f}ms")
+    logger.info(f"  100 个 ping 总时间: {multiple_ping_time:.2f}s")
+    logger.info(f"  100 个并发 ping 时间: {concurrent_time:.2f}s")
+    logger.info("=" * 60)
+
+    # 性能评估
+    if single_ping_latency < 1.0:
+        logger.info("✅ 单个 ping 延迟优秀 (<1ms)")
+    elif single_ping_latency < 5.0:
+        logger.info("⚠️ 单个 ping 延迟一般 (1-5ms)")
+    else:
+        logger.warning(f"❌ 单个 ping 延迟较差 ({single_ping_latency:.2f}ms)")
+
+    if multiple_ping_time < 15:
+        logger.info("✅ 批量 ping 性能优秀 (<15s)")
+    elif multiple_ping_time < 30:
+        logger.info("⚠️ 批量 ping 性能一般 (15-30s)")
+    else:
+        logger.warning(f"❌ 批量 ping 性能较差 ({multiple_ping_time:.2f}s)")
+
+    if concurrent_time < 5:
+        logger.info("✅ 并发性能优秀 (<5s)")
+    elif concurrent_time < 15:
+        logger.info("⚠️ 并发性能一般 (5-15s)")
+    else:
+        logger.warning(f"❌ 并发性能较差 ({concurrent_time:.2f}s)")
 
 
 if __name__ == "__main__":
