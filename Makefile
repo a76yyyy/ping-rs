@@ -94,7 +94,7 @@ lint: lint-python lint-rust
 
 .PHONY: test
 test:
-	uv run pytest
+	uv run pytest -n logical
 
 .PHONY: testcov
 testcov: build-coverage
