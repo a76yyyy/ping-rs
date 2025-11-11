@@ -4,19 +4,11 @@
 use crate::types::result::PingResult;
 use std::time::{Duration, Instant};
 
-/// 计算超时相关的信息
+/// Unix/Linux/macOS 平台的超时计算
 ///
-/// # 参数
-/// - `start_time`: 开始时间
-/// - `timeout_duration`: 总超时时间
-/// - `interval_ms`: ping 间隔（毫秒）
-/// - `count`: 总共要发送的包数量
-/// - `received_count`: 已经收到的响应数量
-///
-/// # 返回
-/// - `bool`: 是否应该超时（已过宽限期）
-/// - `Option<Duration>`: 剩余等待时间
-/// - `Option<PingResult>`: 如果需要构造 Timeout，返回 Timeout 结果
+/// 在这些平台上,ping 命令持续运行,我们在 Rust 层控制接收数量和超时
+/// 需要计算"已完成等待的包"
+#[cfg(not(target_os = "windows"))]
 pub fn calculate_timeout_info(
     start_time: Instant,
     timeout_duration: Duration,
@@ -48,14 +40,47 @@ pub fn calculate_timeout_info(
     let last_completed_seq = last_completed_seq.min(count - 1);
 
     // 如果已经收到了所有应该完成的包,就不需要超时结果
+    // received_count 是已收到的包数量,last_completed_seq 是最后一个应该完成的包的序号
+    // 例如: received_count=6 表示收到了 seq 0-5 共 6 个包
+    //      last_completed_seq=6 表示应该完成 seq 0-6 共 7 个包
+    // 所以应该检查 received_count > last_completed_seq
     if received_count > last_completed_seq {
         return (true, None, None);
     }
 
-    // 构造超时结果
+    // 构造超时结果,返回第一个未收到的包
+    // 例如: received_count=5, last_completed_seq=6
+    //      应该返回 seq 5 的超时结果
+    let timeout_seq = received_count;
     let timeout_result = Some(PingResult::Timeout {
-        line: format!("Request timeout for icmp_seq {}", last_completed_seq),
+        line: format!("Request timeout for icmp_seq {}", timeout_seq),
     });
 
     (true, None, timeout_result)
+}
+
+/// Windows 平台的超时计算
+///
+/// 在 Windows 上,每次 ping 调用都会立即返回(成功或超时)
+/// 我们在循环中多次调用 ping,需要简单地计算"已发送的包数"
+#[cfg(target_os = "windows")]
+pub fn calculate_timeout_info(
+    start_time: Instant,
+    timeout_duration: Duration,
+    interval_ms: u64,
+    count: usize,
+    received_count: usize,
+) -> (bool, Option<Duration>, Option<PingResult>) {
+    let now = Instant::now();
+    let elapsed = now.duration_since(start_time);
+
+    if elapsed < timeout_duration {
+        // 还没到 timeout，正常等待
+        return (false, Some(timeout_duration - elapsed), None);
+    }
+
+    // 已经超过 timeout
+    // 在 Windows 上,我们已经收到了所有在超时时间内发送的 ping 的结果
+    // 不需要再构造额外的超时结果
+    (true, None, None)
 }

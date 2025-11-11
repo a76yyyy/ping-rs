@@ -156,9 +156,10 @@ impl AsyncPinger {
                     }
                     Ok(None) => break, // 通道关闭
                     Err(_) => {
-                        // 超时，检查是否需要构造最后一个包的 Timeout
+                        // tokio::time::timeout 超时
+                        // 检查是否真的到达了总超时时间
                         if let Some(timeout_duration) = timeout {
-                            let (_, _, timeout_result) = calculate_timeout_info(
+                            let (should_timeout, _, timeout_result) = calculate_timeout_info(
                                 start_time,
                                 timeout_duration,
                                 interval_ms,
@@ -166,11 +167,18 @@ impl AsyncPinger {
                                 received_count,
                             );
 
-                            if let Some(result) = timeout_result {
-                                results.push(result);
+                            if should_timeout {
+                                // 已经到达总超时时间
+                                if let Some(result) = timeout_result {
+                                    results.push(result);
+                                }
+                                break;
                             }
+                            // 否则继续循环
+                        } else {
+                            // 没有设置 timeout，不应该超时
+                            break;
                         }
-                        break;
                     }
                 }
             }
