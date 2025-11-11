@@ -16,14 +16,14 @@ USE_MATURIN = $(shell [ "$$VIRTUAL_ENV" != "" ] && (which maturin))
 
 .PHONY: .pre-commit  ## Check that pre-commit is installed
 .pre-commit:
-	@pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
+	@uv run pre-commit -V || echo 'Please install pre-commit: https://pre-commit.com/'
 
 .PHONY: install
 install: .uv .pre-commit
 	uv pip install -U wheel
 	uv sync --frozen --group all
 	uv pip install -v -e .
-	pre-commit install
+	uv run pre-commit install
 
 .PHONY: rebuild-lockfiles  ## Rebuild lockfiles from scratch, updating all dependencies
 rebuild-lockfiles: .uv
