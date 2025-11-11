@@ -272,6 +272,19 @@ cd /path/to/ping-rs
 maturin develop
 ```
 
+## Architecture
+
+### Platform Support
+
+ping-rs uses the [pinger](https://crates.io/crates/pinger) library for cross-platform ping functionality:
+
+- **Windows**: Native ICMP ping via [winping](https://crates.io/crates/winping) crate (no external command required)
+- **Linux**: System `ping` command with output parsing
+- **macOS**: System `ping` command with output parsing
+- **BSD**: System `ping` command with output parsing
+
+All platform-specific implementations are handled by the pinger library, providing a unified interface across all platforms.
+
 ## Acknowledgements
 
 This package uses the following Rust libraries:

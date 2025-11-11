@@ -272,6 +272,19 @@ cd /path/to/ping-rs
 maturin develop
 ```
 
+## 架构
+
+### 平台支持
+
+ping-rs 使用 [pinger](https://crates.io/crates/pinger) 库提供跨平台 ping 功能：
+
+- **Windows**: 通过 [winping](https://crates.io/crates/winping) crate 实现原生 ICMP ping（无需外部命令）
+- **Linux**: 使用系统 `ping` 命令并解析输出
+- **macOS**: 使用系统 `ping` 命令并解析输出
+- **BSD**: 使用系统 `ping` 命令并解析输出
+
+所有平台特定的实现都由 pinger 库处理，为所有平台提供统一的接口。
+
 ## 致谢
 
 本库使用了以下 Rust 库：
