@@ -5,7 +5,7 @@ use crate::utils::validation::{validate_interval_ms, validate_timeout_ms};
 use pyo3::exceptions::PyRuntimeError;
 use pyo3::prelude::*;
 use pyo3_async_runtimes::tokio::future_into_py;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use super::helpers::calculate_timeout_info;
 
@@ -115,20 +115,26 @@ impl AsyncPinger {
             let mut results = Vec::new();
             let mut received_count = 0;
 
-            while received_count < count {
+            let mut should_stop = false;
+
+            while received_count < count && !should_stop {
                 // 计算剩余时间，支持 interval 浮动
                 let remaining_time = if let Some(timeout_duration) = timeout {
                     let (should_timeout, remaining, timeout_result) =
                         calculate_timeout_info(start_time, timeout_duration, interval_ms, count, received_count);
 
                     if should_timeout {
-                        // 已经过了宽限期
+                        // 已经过了超时时间
                         if let Some(result) = timeout_result {
                             results.push(result);
                         }
-                        break;
+                        // 标记应该停止，但先尝试接收已经在通道中的结果
+                        should_stop = true;
+                        // 使用 0 超时来尝试接收已经准备好的结果
+                        Some(Duration::from_millis(0))
+                    } else {
+                        remaining
                     }
-                    remaining
                 } else {
                     // 没有设置 timeout，无限等待
                     None
@@ -157,6 +163,11 @@ impl AsyncPinger {
                     Ok(None) => break, // 通道关闭
                     Err(_) => {
                         // tokio::time::timeout 超时
+                        if should_stop {
+                            // 已经标记要停止，现在真的停止
+                            break;
+                        }
+
                         // 检查是否真的到达了总超时时间
                         if let Some(timeout_duration) = timeout {
                             let (should_timeout, _, timeout_result) = calculate_timeout_info(
