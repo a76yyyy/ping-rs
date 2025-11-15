@@ -1,6 +1,6 @@
 [package]
 name = "ping-rs"
-version = "1.2.0"
+version = "2.0.0"
 edition = "2021"
 description = "Python bindings for ping functionality using PyO3"
 authors = ["a76yyyy <a76yyyy@gmail.com>"]
