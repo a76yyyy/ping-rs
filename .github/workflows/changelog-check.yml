@@ -30,7 +30,7 @@ jobs:
         id: validate_en
         uses: mindsers/changelog-reader-action@v2
         with:
-          validation_level: warn
+          validation_level: error
           validation_depth: 10
           version: ${{ inputs.version || '' }}
           path: ./CHANGELOG.md
@@ -41,7 +41,7 @@ jobs:
         id: validate_zh
         uses: mindsers/changelog-reader-action@v2
         with:
-          validation_level: warn
+          validation_level: error
           validation_depth: 10
           version: ${{ inputs.version || '' }}
           path: ./CHANGELOG_ZH.md
