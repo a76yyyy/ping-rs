@@ -2,7 +2,7 @@
 
 from typing import final
 
-from typing_extensions import override
+from typing_extensions import disjoint_base, override
 
 from ping_rs.core_schema import PingResultDict, TargetType
 
@@ -22,6 +22,7 @@ __all__ = [
     "ping_multiple_async",
 ]
 
+@disjoint_base
 class PingResult:
     """Represents the result of a ping operation."""
 
@@ -32,7 +33,7 @@ class PingResult:
         __match_args__ = ("duration_ms", "line")
         duration_ms: float
         line: str
-        def __init__(self, duration_ms: float, line: str) -> None: ...
+        def __new__(cls, duration_ms: float, line: str) -> PingResult.Pong: ...
 
     @final
     class Timeout:
@@ -40,7 +41,7 @@ class PingResult:
 
         __match_args__ = ("line",)
         line: str
-        def __init__(self, line: str) -> None: ...
+        def __new__(cls, line: str) -> PingResult.Timeout: ...
 
     @final
     class Unknown:
@@ -48,7 +49,7 @@ class PingResult:
 
         __match_args__ = ("line",)
         line: str
-        def __init__(self, line: str) -> None: ...
+        def __new__(cls, line: str) -> PingResult.Unknown: ...
 
     @final
     class PingExited:
@@ -57,7 +58,7 @@ class PingResult:
         __match_args__ = ("exit_code", "stderr")
         exit_code: int
         stderr: str
-        def __init__(self, exit_code: int, stderr: str) -> None: ...
+        def __new__(cls, exit_code: int, stderr: str) -> PingResult.PingExited: ...
 
     @override
     def __repr__(self) -> str: ...
@@ -112,14 +113,14 @@ class PingResult:
 class Pinger:
     """High-level ping interface."""
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         target: TargetType,
         interval_ms: int = 1000,
         interface: str | None = None,
         ipv4: bool = False,
         ipv6: bool = False,
-    ) -> None: ...
+    ) -> Pinger: ...
     def ping_once(self) -> PingResult:
         """Execute a single ping synchronously."""
         ...
@@ -135,14 +136,14 @@ class Pinger:
 class AsyncPinger:
     """High-level ping interface."""
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         target: TargetType,
         interval_ms: int = 1000,
         interface: str | None = None,
         ipv4: bool = False,
         ipv6: bool = False,
-    ) -> None: ...
+    ) -> AsyncPinger: ...
     async def ping_once(self) -> PingResult:
         """Execute a single ping asynchronously."""
         ...
@@ -158,15 +159,15 @@ class AsyncPinger:
 class PingStream:
     """Non-blocking ping stream processor."""
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         target: TargetType,
         interval_ms: int = 1000,
         interface: str | None = None,
         ipv4: bool = False,
         ipv6: bool = False,
         max_count: int | None = None,
-    ) -> None: ...
+    ) -> PingStream: ...
     def try_recv(self) -> PingResult | None:
         """Try to receive the next ping result without blocking."""
         ...
@@ -195,15 +196,15 @@ class PingStream:
 class AsyncPingStream:
     """Async ping stream processor."""
 
-    def __init__(
-        self,
+    def __new__(
+        cls,
         target: TargetType,
         interval_ms: int = 1000,
         interface: str | None = None,
         ipv4: bool = False,
         ipv6: bool = False,
         max_count: int | None = None,
-    ) -> None: ...
+    ) -> AsyncPingStream: ...
     def __aiter__(self) -> AsyncPingStream:
         """Return self as an async iterator."""
         ...
