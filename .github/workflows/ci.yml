@@ -126,13 +126,11 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
-          - "3.13t"
-          - "3.14"
 
     runs-on: ubuntu-latest
 
     # TODO: get test suite stable with free-threaded python
-    continue-on-error: ${{ endsWith(matrix.python-version, 't') || matrix.python-version == '3.14' }}
+    continue-on-error: false
 
     steps:
       - uses: actions/checkout@v4
@@ -267,8 +265,6 @@ jobs:
       matrix:
         python-version:
           - "3.13"
-          - "3.13t"
-          - "3.14"
 
     steps:
       - uses: actions/checkout@v4
@@ -399,15 +395,15 @@ jobs:
           - os: linux
             manylinux: auto
             target: armv7
-            interpreter: 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.10 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.10 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.10 3.11 3.12 3.13
           - os: linux
             manylinux: auto
             target: x86_64
@@ -443,7 +439,7 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.10 3.11 3.12 3.13 3.14
+            interpreter: 3.10 3.11 3.12 3.13
 
         exclude:
           # See above; disabled for now.
@@ -467,7 +463,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.13t 3.14 pypy3.11' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -494,7 +490,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, windows, macos]
-        interpreter: ["3.10", "3.11", "3.12", "3.13", "3.13t", "3.14"]
+        interpreter: ["3.10", "3.11", "3.12", "3.13"]
         include:
           # standard runners with override for macos arm
           - os: linux
@@ -504,9 +500,7 @@ jobs:
             runs-on: windows-latest
           - os: macos
             runs-on: macos-latest
-
-    continue-on-error: ${{ endsWith(matrix.interpreter, 't') || matrix.interpreter == '3.14' }}
-
+    continue-on-error: false
     runs-on: ${{ matrix.runs-on }}
     steps:
       - uses: actions/checkout@v4
