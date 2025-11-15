@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.0.1] - 2025-11-15
+
 ### Fixed
 
 - Ensure typing override compatibility on Python < 3.12 by importing `override` from `typing_extensions` in stubs
@@ -123,7 +125,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - tokio for async runtime
 - serde for serialization
 
-[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/a76yyyy/ping-rs/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/a76yyyy/ping-rs/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/a76yyyy/ping-rs/releases/tag/v1.0.0

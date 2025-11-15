@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [2.0.1] - 2025-11-15
+
 ### Fixed（修复）
 
 - 在 Python < 3.12 环境下，通过在存根中从 `typing_extensions` 引入 `override` 以确保类型提示兼容性
@@ -123,7 +125,8 @@
 - tokio：异步运行时
 - serde：序列化支持
 
-[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.1...HEAD
+[2.0.1]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/a76yyyy/ping-rs/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/a76yyyy/ping-rs/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/a76yyyy/ping-rs/releases/tag/v1.0.0
