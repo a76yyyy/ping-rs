@@ -12,6 +12,11 @@ env:
   COLUMNS: 150
   UV_PYTHON: 3.13
 
+# Avoid duplicate runs on rapid pushes
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # 检测哪些文件类型发生了变更
   changes:
@@ -121,11 +126,13 @@ jobs:
           - "3.11"
           - "3.12"
           - "3.13"
+          - "3.13t"
+          - "3.14"
 
     runs-on: ubuntu-latest
 
     # TODO: get test suite stable with free-threaded python
-    continue-on-error: ${{ endsWith(matrix.python-version, 't') }}
+    continue-on-error: ${{ endsWith(matrix.python-version, 't') || matrix.python-version == '3.14' }}
 
     steps:
       - uses: actions/checkout@v4
@@ -155,7 +162,7 @@ jobs:
       - run: uv run pytest -n logical
         env:
           HYPOTHESIS_PROFILE: slow
-          PYTEST_ADDOPTS: ${{ endsWith(matrix.python-version, 't') && '--parallel-threads=2' || '' }}
+          PYTEST_ADDOPTS: ${{ (endsWith(matrix.python-version, 't') || matrix.python-version == '3.14') && '--parallel-threads=2' || '' }}
 
   test-os:
     name: test on ${{ matrix.os }}
@@ -260,6 +267,8 @@ jobs:
       matrix:
         python-version:
           - "3.13"
+          - "3.13t"
+          - "3.14"
 
     steps:
       - uses: actions/checkout@v4
@@ -389,19 +398,16 @@ jobs:
             target: i686
           - os: linux
             manylinux: auto
-            target: aarch64
-          - os: linux
-            manylinux: auto
             target: armv7
-            interpreter: 3.10 3.11 3.12 3.13
+            interpreter: 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: ppc64le
-            interpreter: 3.10 3.11 3.12 3.13
+            interpreter: 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: s390x
-            interpreter: 3.10 3.11 3.12 3.13
+            interpreter: 3.10 3.11 3.12 3.13 3.14
           - os: linux
             manylinux: auto
             target: x86_64
@@ -437,7 +443,7 @@ jobs:
           - os: windows
             target: i686
             python-architecture: x86
-            interpreter: 3.10 3.11 3.12 3.13
+            interpreter: 3.10 3.11 3.12 3.13 3.14
 
         exclude:
           # See above; disabled for now.
@@ -461,7 +467,7 @@ jobs:
         with:
           target: ${{ matrix.target }}
           manylinux: ${{ matrix.manylinux }}
-          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 pypy3.11' }}
+          args: --release --out dist --interpreter ${{ matrix.interpreter || '3.10 3.11 3.12 3.13 3.13t 3.14 pypy3.11' }}
           rust-toolchain: stable
           docker-options: -e CI
 
@@ -488,7 +494,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [linux, windows, macos]
-        interpreter: ["3.10", "3.11", "3.12", "3.13"]
+        interpreter: ["3.10", "3.11", "3.12", "3.13", "3.13t", "3.14"]
         include:
           # standard runners with override for macos arm
           - os: linux
@@ -498,6 +504,8 @@ jobs:
             runs-on: windows-latest
           - os: macos
             runs-on: macos-latest
+
+    continue-on-error: ${{ endsWith(matrix.interpreter, 't') || matrix.interpreter == '3.14' }}
 
     runs-on: ${{ matrix.runs-on }}
     steps:
@@ -680,13 +688,20 @@ jobs:
 
       - run: twine check --strict dist/*
 
+      - name: Derive version from tag (strip leading 'v')
+        id: derive_version
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          VERSION="${TAG#v}"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
       - name: Read Changelog (English)
         id: changelog_en
         uses: mindsers/changelog-reader-action@v2
         continue-on-error: true
         with:
           validation_level: none
-          version: ${{ github.ref_name }}
+          version: ${{ steps.derive_version.outputs.version }}
           path: ./CHANGELOG.md
 
       - name: Read Changelog (Chinese)
@@ -695,7 +710,7 @@ jobs:
         continue-on-error: true
         with:
           validation_level: none
-          version: ${{ github.ref_name }}
+          version: ${{ steps.derive_version.outputs.version }}
           path: ./CHANGELOG_ZH.md
 
       - name: Create bilingual release notes
@@ -724,4 +739,4 @@ jobs:
           files: |
             dist/*.whl
             dist/*.tar.gz
-          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') }}
+          prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
