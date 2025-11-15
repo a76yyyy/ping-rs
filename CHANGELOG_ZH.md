@@ -14,10 +14,16 @@
 - 在 Python < 3.12 环境下，通过在存根中从 `typing_extensions` 引入 `override` 以确保类型提示兼容性
 - 对齐 `PingStream` 的迭代协议存根：将 `__next__` 改为同步方法，并补全构造参数以匹配 Rust 实现
 - 移除顶层重复的存根文件，保留 `ping_rs/_ping_rs.pyi` 作为唯一权威存根，避免漂移
+- 修正 `PingResult` 存根：将嵌套变体的构造从 `__init__` 调整为 `__new__`，并为基类添加 `@disjoint_base` 注解，改进类型检查与模式匹配
 
 ### Changed（变更）
 
 - 更新开发/校验相关依赖，新增 `typing_extensions`，并同步刷新依赖集合
+- CI：新增并发控制（快速连续 push 时自动取消旧运行）以避免重复任务
+- 发布：读取变更日志时从 tag 中去掉前缀 `v` 以解析版本号
+- GitHub Release：将包含 `rc` 的 tag 视为预发布（补充 `alpha`/`beta`）
+- CI：统一 continue-on-error 设置为 `false`，提升稳定性
+- CI：简化测试/构建矩阵；暂时移除对 3.13t 与 CPython 3.14 的测试覆盖
 
 ## [2.0.0] - 2025-11-15
 
