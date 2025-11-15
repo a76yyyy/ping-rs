@@ -558,6 +558,36 @@ jobs:
 
       - run: twine check --strict dist/*
 
+      - name: Read Changelog (English)
+        id: changelog_en
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          validation_level: warn
+          version: ${{ github.ref_name }}
+          path: ./CHANGELOG.md
+
+      - name: Read Changelog (Chinese)
+        id: changelog_zh
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          validation_level: warn
+          version: ${{ github.ref_name }}
+          path: ./CHANGELOG_ZH.md
+
+      - name: Create bilingual release notes
+        run: |
+          cat << 'EOF' > release_notes.md
+          ## English
+
+          ${{ steps.changelog_en.outputs.changes }}
+
+          ---
+
+          ## 简体中文
+
+          ${{ steps.changelog_zh.outputs.changes }}
+          EOF
+
       - name: Publish to PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
@@ -566,6 +596,7 @@ jobs:
       - name: upload to github release
         uses: softprops/action-gh-release@v2
         with:
+          body_path: release_notes.md
           files: |
             dist/*.whl
             dist/*.tar.gz
