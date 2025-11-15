@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- Ensure typing override compatibility on Python < 3.12 by importing `override` from `typing_extensions` in stubs
+- Align `PingStream` iterator protocol in stubs: make `__next__` synchronous and add constructor parameters to match Rust implementation
+- Remove duplicate top-level stub to avoid drift; keep authoritative stub at `ping_rs/_ping_rs.pyi`
+
+### Changed
+
+- Updated development/lint dependencies; add `typing_extensions` and refresh dependency set
+
 ## [2.0.0] - 2025-11-15
 
 ### Added

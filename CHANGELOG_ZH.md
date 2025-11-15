@@ -7,7 +7,17 @@
 文档格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)，
 项目遵循[语义化版本](https://semver.org/lang/zh-CN/)规范。
 
-## [未发布]
+## [Unreleased]
+
+### Fixed（修复）
+
+- 在 Python < 3.12 环境下，通过在存根中从 `typing_extensions` 引入 `override` 以确保类型提示兼容性
+- 对齐 `PingStream` 的迭代协议存根：将 `__next__` 改为同步方法，并补全构造参数以匹配 Rust 实现
+- 移除顶层重复的存根文件，保留 `ping_rs/_ping_rs.pyi` 作为唯一权威存根，避免漂移
+
+### Changed（变更）
+
+- 更新开发/校验相关依赖，新增 `typing_extensions`，并同步刷新依赖集合
 
 ## [2.0.0] - 2025-11-15
 
@@ -107,7 +117,7 @@
 - tokio：异步运行时
 - serde：序列化支持
 
-[未发布]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...HEAD
 [2.0.0]: https://github.com/a76yyyy/ping-rs/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/a76yyyy/ping-rs/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/a76yyyy/ping-rs/releases/tag/v1.0.0
