@@ -1,0 +1,84 @@
+name: Changelog Check
+
+on:
+  pull_request:
+    paths:
+      - "CHANGELOG.md"
+      - "CHANGELOG_ZH.md"
+      - ".github/workflows/changelog-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "CHANGELOG.md"
+      - "CHANGELOG_ZH.md"
+      - ".github/workflows/changelog-check.yml"
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Specific version to validate (optional)"
+        required: false
+        type: string
+
+jobs:
+  changelog-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Validate changelog format (EN)
+        id: validate_en
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          validation_level: warn
+          validation_depth: 10
+          version: ${{ inputs.version || '' }}
+          path: ./CHANGELOG.md
+        env:
+          COLUMNS: 150
+
+      - name: Validate changelog format (ZH)
+        id: validate_zh
+        uses: mindsers/changelog-reader-action@v2
+        with:
+          validation_level: warn
+          validation_depth: 10
+          version: ${{ inputs.version || '' }}
+          path: ./CHANGELOG_ZH.md
+        env:
+          COLUMNS: 150
+
+      - name: Check version consistency
+        if: inputs.version != ''
+        run: |
+          echo "Checking version ${{ inputs.version }} in both changelogs..."
+
+          EN_CHANGES="${{ steps.validate_en.outputs.changes }}"
+          ZH_CHANGES="${{ steps.validate_zh.outputs.changes }}"
+
+          if [ -z "$EN_CHANGES" ]; then
+            echo "::error::Version ${{ inputs.version }} not found in CHANGELOG.md"
+            exit 1
+          fi
+
+          if [ -z "$ZH_CHANGES" ]; then
+            echo "::error::Version ${{ inputs.version }} not found in CHANGELOG_ZH.md"
+            exit 1
+          fi
+
+          echo "✅ Version ${{ inputs.version }} found in both changelogs"
+
+      - name: Summary
+        if: always()
+        run: |
+          echo "## Changelog Validation Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          if [ -n "${{ inputs.version }}" ]; then
+            echo "- **Validated Version**: ${{ inputs.version }}" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Mode**: Full validation" >> $GITHUB_STEP_SUMMARY
+          fi
+
+          echo "- **English Changelog**: ${{ steps.validate_en.outcome }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Chinese Changelog**: ${{ steps.validate_zh.outcome }}" >> $GITHUB_STEP_SUMMARY
