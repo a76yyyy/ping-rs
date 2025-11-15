@@ -1,6 +1,8 @@
 """Type stubs for ping_rs Rust extension module."""
 
-from typing import final, override
+from typing import final
+
+from typing_extensions import override
 
 from ping_rs.core_schema import PingResultDict, TargetType
 
@@ -156,6 +158,15 @@ class AsyncPinger:
 class PingStream:
     """Non-blocking ping stream processor."""
 
+    def __init__(
+        self,
+        target: TargetType,
+        interval_ms: int = 1000,
+        interface: str | None = None,
+        ipv4: bool = False,
+        ipv6: bool = False,
+        max_count: int | None = None,
+    ) -> None: ...
     def try_recv(self) -> PingResult | None:
         """Try to receive the next ping result without blocking."""
         ...
@@ -172,7 +183,7 @@ class PingStream:
         """Return self as an sync iterator."""
         ...
 
-    async def __next__(self) -> PingResult:
+    def __next__(self) -> PingResult:
         """Get the next ping result synchronously.
 
         Raises:

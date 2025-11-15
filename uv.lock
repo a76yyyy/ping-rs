@@ -404,6 +404,7 @@ all = [
     { name = "pytest-speed" },
     { name = "pytest-xdist" },
     { name = "ruff" },
+    { name = "typing-extensions" },
 ]
 codspeed = [
     { name = "pytest-codspeed", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython'" },
@@ -419,6 +420,7 @@ linting = [
     { name = "mypy" },
     { name = "pre-commit" },
     { name = "ruff" },
+    { name = "typing-extensions" },
 ]
 testing = [
     { name = "maturin" },
@@ -451,6 +453,7 @@ all = [
     { name = "pytest-speed" },
     { name = "pytest-xdist" },
     { name = "ruff", specifier = ">=0.1.0" },
+    { name = "typing-extensions", specifier = ">=4.6" },
 ]
 codspeed = [{ name = "pytest-codspeed", marker = "python_full_version == '3.13.*' and implementation_name == 'cpython'" }]
 dev = [
@@ -464,6 +467,7 @@ linting = [
     { name = "mypy", specifier = ">=1.0" },
     { name = "pre-commit", specifier = ">=4.2.0" },
     { name = "ruff", specifier = ">=0.1.0" },
+    { name = "typing-extensions", specifier = ">=4.6" },
 ]
 testing = [
     { name = "maturin", specifier = ">=1.8.6" },
