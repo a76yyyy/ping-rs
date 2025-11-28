@@ -1,3 +1,8 @@
+//! Build script for ping-rs.
+//!
+//! This script configures `PyO3` build settings and sets up conditional compilation
+//! flags for coverage and profiling features.
+
 fn main() {
     pyo3_build_config::use_pyo3_cfgs();
     if let Some(true) = version_check::supports_feature("coverage_attribute") {
@@ -12,5 +17,8 @@ fn main() {
         println!("cargo:rustc-cfg=specified_profile_use");
     }
     println!("cargo:rustc-check-cfg=cfg(specified_profile_use)");
-    println!("cargo:rustc-env=PROFILE={}", std::env::var("PROFILE").unwrap());
+    println!(
+        "cargo:rustc-env=PROFILE={}",
+        std::env::var("PROFILE").unwrap_or_default()
+    );
 }
