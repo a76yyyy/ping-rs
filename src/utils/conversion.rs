@@ -20,7 +20,7 @@ pub fn extract_target(target: &Bound<PyAny>) -> PyResult<String> {
     ))
 }
 
-/// 创建 PingOptions 配置
+/// 创建 `PingOptions` 配置
 ///
 /// # 参数
 /// - `target`: 目标主机名或 IP 地址
@@ -33,7 +33,7 @@ pub fn extract_target(target: &Bound<PyAny>) -> PyResult<String> {
 /// - 不添加 -c/-n 参数，让 ping 命令持续运行
 /// - 不添加 -t/-w 等超时参数
 /// - 完全依赖 Rust 层控制接收数量和超时
-/// - 依赖 tokio 的 kill_on_drop 机制来清理子进程
+/// - 依赖 tokio 的 `kill_on_drop` 机制来清理子进程
 pub fn create_ping_options(
     target: &str,
     interval_ms: u64,

@@ -2,7 +2,7 @@ use pinger::PingResult as RustPingResult;
 use pyo3::prelude::*;
 use pyo3::types::PyDict;
 
-/// Python 包装的 PingResult 枚举
+/// Python 包装的 `PingResult` 枚举
 #[pyclass]
 #[derive(Debug, Clone)]
 pub enum PingResult {
@@ -21,12 +21,12 @@ impl PingResult {
     pub fn __repr__(&self) -> String {
         match self {
             Self::Pong { duration_ms, line } => {
-                format!("PingResult.Pong(duration_ms={}ms, line='{}')", duration_ms, line)
+                format!("PingResult.Pong(duration_ms={duration_ms}ms, line='{line}')")
             }
-            Self::Timeout { line } => format!("PingResult.Timeout(line='{}')", line),
-            Self::Unknown { line } => format!("PingResult.Unknown(line='{}')", line),
+            Self::Timeout { line } => format!("PingResult.Timeout(line='{line}')"),
+            Self::Unknown { line } => format!("PingResult.Unknown(line='{line}')"),
             Self::PingExited { exit_code, stderr } => {
-                format!("PingResult.PingExited(exit_code={}, stderr='{}')", exit_code, stderr)
+                format!("PingResult.PingExited(exit_code={exit_code}, stderr='{stderr}')")
             }
         }
     }
@@ -55,7 +55,7 @@ impl PingResult {
         }
     }
 
-    /// 获取退出代码，如果不是 PingExited 则返回 None
+    /// 获取退出代码，如果不是 `PingExited` 则返回 None
     #[getter]
     pub fn exit_code(&self) -> Option<i32> {
         match self {
@@ -64,7 +64,7 @@ impl PingResult {
         }
     }
 
-    /// 获取标准错误输出，如果不是 PingExited 则返回 None
+    /// 获取标准错误输出，如果不是 `PingExited` 则返回 None
     #[getter]
     pub fn stderr(&self) -> Option<String> {
         match self {
@@ -93,7 +93,7 @@ impl PingResult {
         matches!(self, Self::PingExited { .. })
     }
 
-    /// 获取 PingResult 的类型名称
+    /// 获取 `PingResult` 的类型名称
     #[getter]
     pub fn type_name(&self) -> String {
         match self {
@@ -104,7 +104,7 @@ impl PingResult {
         }
     }
 
-    /// 将 PingResult 转换为字典
+    /// 将 `PingResult` 转换为字典
     pub fn to_dict(&self, py: Python) -> PyResult<Py<PyAny>> {
         let dict = PyDict::new(py);
 
@@ -127,7 +127,7 @@ impl PingResult {
                 dict.set_item("exit_code", *exit_code)?;
                 dict.set_item("stderr", stderr.clone())?;
             }
-        };
+        }
 
         Ok(dict.into())
     }

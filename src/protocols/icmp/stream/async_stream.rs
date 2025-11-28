@@ -42,7 +42,7 @@ pub struct AsyncPingStream {
 
 #[pymethods]
 impl AsyncPingStream {
-    /// 创建新的 AsyncPingStream 实例
+    /// 创建新的 `AsyncPingStream` 实例
     #[new]
     #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None))]
     pub fn new(
@@ -113,7 +113,7 @@ impl AsyncPingStream {
                 // 如果接收器不存在，创建新的接收器
                 let mut receiver = platform::execute_ping_async(state.options.clone())
                     .await
-                    .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
+                    .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
                 let result = next_ping_stream(&mut receiver).await;
                 if result.is_ok() {

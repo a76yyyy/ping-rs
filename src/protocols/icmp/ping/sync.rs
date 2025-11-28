@@ -54,7 +54,7 @@ impl Pinger {
 
         // 执行ping并等待第一个结果
         let receiver = platform::execute_ping(options)
-            .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
+            .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
         // 使用 interval 作为超时时间
         let timeout = std::time::Duration::from_millis(self.interval_ms);
@@ -98,7 +98,7 @@ impl Pinger {
 
         // 执行ping
         let receiver = platform::execute_ping(options)
-            .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
+            .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
         let mut results = Vec::new();
         let mut received_count = 0;

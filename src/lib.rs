@@ -34,7 +34,7 @@ fn create_ping_stream(
 ///
 /// # 参数
 /// - `timeout_ms`: 等待响应的超时时间（毫秒），默认 1000ms
-///   注意：内部实现中，这个值会被用作 interval_ms 传递给底层 ping 命令
+///   注意：内部实现中，这个值会被用作 `interval_ms` 传递给底层 ping 命令
 #[pyfunction]
 #[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false))]
 fn ping_once(
@@ -56,7 +56,7 @@ fn ping_once(
 ///
 /// # 参数
 /// - `timeout_ms`: 等待响应的超时时间（毫秒），默认 1000ms
-///   注意：内部实现中，这个值会被用作 interval_ms 传递给底层 ping 命令
+///   注意：内部实现中，这个值会被用作 `interval_ms` 传递给底层 ping 命令
 #[pyfunction]
 #[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false))]
 fn ping_once_async<'py>(

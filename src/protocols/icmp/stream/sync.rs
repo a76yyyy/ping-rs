@@ -17,7 +17,7 @@ pub struct PingStream {
 
 #[pymethods]
 impl PingStream {
-    /// 创建新的 PingStream 实例
+    /// 创建新的 `PingStream` 实例
     #[new]
     #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None))]
     pub fn new(
@@ -46,7 +46,7 @@ impl PingStream {
         // 执行 ping 并获取接收器
         let receiver = match platform::execute_ping(options) {
             Ok(rx) => rx,
-            Err(e) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e))),
+            Err(e) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}"))),
         };
 
         // 将接收器包装到 PingStream 中
@@ -64,9 +64,8 @@ impl PingStream {
                 self.receiver = None;
                 if iter {
                     return Err(PyStopIteration::new_err("Stream exhausted"));
-                } else {
-                    return Ok(None);
                 }
+                return Ok(None);
             }
         }
         if let Some(receiver) = &self.receiver {

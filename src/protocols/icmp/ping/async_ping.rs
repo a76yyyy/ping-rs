@@ -60,7 +60,7 @@ impl AsyncPinger {
             // 获取异步通道
             let mut receiver = platform::execute_ping_async(options)
                 .await
-                .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
+                .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
             // 使用 interval 作为超时时间（单次 ping 的最大等待时间）
             match tokio::time::timeout(interval_duration, receiver.recv()).await {
@@ -110,7 +110,7 @@ impl AsyncPinger {
             // 获取异步通道
             let mut receiver = platform::execute_ping_async(options)
                 .await
-                .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {}", e)))?;
+                .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
             let mut results = Vec::new();
             let mut received_count = 0;

@@ -33,7 +33,7 @@ pub fn calculate_timeout_info(
     //   - seq 6 在 3000ms 发送,还在等待中
     // 所以 last_completed_seq = (3000 - 1) / 500 = 5
     let last_completed_seq = if elapsed.as_millis() > 0 {
-        ((elapsed.as_millis() - 1) / interval_ms as u128) as usize
+        ((elapsed.as_millis() - 1) / u128::from(interval_ms)) as usize
     } else {
         0
     };
@@ -53,7 +53,7 @@ pub fn calculate_timeout_info(
     //      应该返回 seq 5 的超时结果
     let timeout_seq = received_count;
     let timeout_result = Some(PingResult::Timeout {
-        line: format!("Request timeout for icmp_seq {}", timeout_seq),
+        line: format!("Request timeout for icmp_seq {timeout_seq}"),
     });
 
     (true, None, timeout_result)
