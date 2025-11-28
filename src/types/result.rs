@@ -123,6 +123,9 @@ impl PingResult {
     }
 
     /// 将 `PingResult` 转换为字典
+    ///
+    /// # Errors
+    /// - `PyErr`: If failed to set dictionary items (rare, usually indicates memory issues)
     pub fn to_dict(&self, py: Python) -> PyResult<Py<PyAny>> {
         let dict = PyDict::new(py);
 

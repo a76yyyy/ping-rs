@@ -20,6 +20,7 @@ pub fn validate_interval_ms(value: i64, param_name: &str) -> PyResult<u64> {
             "{param_name} must be a multiple of 100ms due to ping command's decimal precision"
         )));
     }
+    #[allow(clippy::cast_sign_loss)]
     Ok(value as u64)
 }
 
@@ -30,6 +31,7 @@ pub fn validate_count(count: i32, param_name: &str) -> PyResult<usize> {
             "{param_name} ({count}) must be a positive integer"
         )));
     }
+    #[allow(clippy::cast_sign_loss)]
     Ok(count as usize)
 }
 

@@ -29,6 +29,10 @@ impl AsyncPinger {
     /// - `interface`: Network interface to use (optional)
     /// - `ipv4`: Force IPv4 (default: false)
     /// - `ipv6`: Force IPv6 (default: false)
+    ///
+    /// # Errors
+    /// - `PyValueError`: If `interval_ms` is negative, less than 100ms, or not a multiple of 100ms
+    /// - `PyTypeError`: If the target cannot be converted to a string
     #[new]
     #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false))]
     pub fn new(
@@ -53,6 +57,9 @@ impl AsyncPinger {
     }
 
     /// 异步执行单次ping
+    ///
+    /// # Errors
+    /// - `PyRuntimeError`: If the ping process fails to start or execute
     pub fn ping_once<'py>(&self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         let target = self.target.clone();
         let interval_ms = self.interval_ms;
@@ -91,6 +98,10 @@ impl AsyncPinger {
     }
 
     /// 异步执行多次 ping
+    ///
+    /// # Errors
+    /// - `PyValueError`: If `count` is not positive, or `timeout_ms` is invalid
+    /// - `PyRuntimeError`: If the ping process fails to start or execute
     #[pyo3(signature = (count=4, timeout_ms=None))]
     pub fn ping_multiple<'py>(
         &self,

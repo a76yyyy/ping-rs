@@ -20,6 +20,11 @@ pub struct PingStream {
 #[pymethods]
 impl PingStream {
     /// 创建新的 `PingStream` 实例
+    ///
+    /// # Errors
+    /// - `PyValueError`: If `interval_ms` is negative, less than 100ms, not a multiple of 100ms, or `max_count` is too large
+    /// - `PyTypeError`: If the target cannot be converted to a string
+    /// - `PyRuntimeError`: If the ping process fails to start
     #[new]
     #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None))]
     pub fn new(
@@ -64,6 +69,7 @@ impl PingStream {
         })
     }
 
+    #[allow(clippy::used_underscore_items)]
     fn _recv(&mut self, non_blocking: bool, iter: bool) -> PyResult<Option<PingResult>> {
         // 检查是否达到最大数量
         if let Some(max) = self.max_count {
@@ -77,9 +83,8 @@ impl PingStream {
         }
         if let Some(receiver) = &self.receiver {
             let result = {
-                let receiver_guard = match receiver.lock() {
-                    Ok(guard) => guard,
-                    Err(_) => return Err(PyErr::new::<PyRuntimeError, _>("Failed to lock receiver")),
+                let Ok(receiver_guard) = receiver.lock() else {
+                    return Err(PyErr::new::<PyRuntimeError, _>("Failed to lock receiver"));
                 };
                 if iter {
                     // 阻塞接收
@@ -125,11 +130,19 @@ impl PingStream {
     }
 
     /// 获取下一个 ping 结果（非阻塞）
+    ///
+    /// # Errors
+    /// - `PyRuntimeError`: If the receiver mutex lock fails
+    #[allow(clippy::used_underscore_items)]
     pub fn try_recv(&mut self) -> PyResult<Option<PingResult>> {
         self._recv(true, false)
     }
 
     /// 阻塞等待下一个 ping 结果
+    ///
+    /// # Errors
+    /// - `PyRuntimeError`: If the receiver mutex lock fails
+    #[allow(clippy::used_underscore_items)]
     pub fn recv(&mut self) -> PyResult<Option<PingResult>> {
         self._recv(false, false)
     }
@@ -142,6 +155,11 @@ impl PingStream {
     /// Python iterator protocol: get next ping result
     ///
     /// Returns the next ping result or raises `StopIteration` when the stream is exhausted.
+    ///
+    /// # Errors
+    /// - `PyStopIteration`: When the stream is exhausted (`max_count` reached or ping process exited)
+    /// - `PyRuntimeError`: If the receiver mutex lock fails
+    #[allow(clippy::used_underscore_items)]
     pub fn __next__(&mut self) -> PyResult<Option<PingResult>> {
         self._recv(false, true)
     }

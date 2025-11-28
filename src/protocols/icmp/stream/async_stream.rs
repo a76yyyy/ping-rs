@@ -46,6 +46,10 @@ pub struct AsyncPingStream {
 #[pymethods]
 impl AsyncPingStream {
     /// 创建新的 `AsyncPingStream` 实例
+    ///
+    /// # Errors
+    /// - `PyValueError`: If `interval_ms` is negative, less than 100ms, not a multiple of 100ms, or `max_count` is too large
+    /// - `PyTypeError`: If the target cannot be converted to a string
     #[new]
     #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None))]
     pub fn new(
@@ -98,6 +102,10 @@ impl AsyncPingStream {
     /// Python async iterator protocol: get next ping result
     ///
     /// Returns the next ping result or raises `StopAsyncIteration` when the stream is exhausted.
+    ///
+    /// # Errors
+    /// - `PyStopAsyncIteration`: When the stream is exhausted (`max_count` reached or ping process exited)
+    /// - `PyRuntimeError`: If the ping process fails to start or execute
     pub fn __anext__<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         // 获取状态的克隆，以便在异步闭包中使用
         let state_clone = self.state.clone();
