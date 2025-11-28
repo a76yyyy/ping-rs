@@ -36,7 +36,12 @@ impl PingStream {
 
         // 验证 max_count 如果有的话
         if let Some(count) = max_count {
-            crate::utils::validation::validate_count(count.try_into().unwrap(), "max_count")?;
+            let count_i32 = count.try_into().map_err(|_| {
+                PyErr::new::<pyo3::exceptions::PyValueError, _>(format!(
+                    "max_count ({count}) is too large to convert to i32"
+                ))
+            })?;
+            crate::utils::validation::validate_count(count_i32, "max_count")?;
         }
 
         // 创建 ping 选项（不传递 count 给底层 ping 命令）
