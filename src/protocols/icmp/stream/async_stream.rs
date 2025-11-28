@@ -34,6 +34,9 @@ struct AsyncPingStreamState {
     current_count: usize,
 }
 
+/// Asynchronous ping stream for continuous ping operations
+///
+/// This struct provides an async iterator interface for streaming ping results.
 #[pyclass]
 pub struct AsyncPingStream {
     // 使用 tokio::sync::Mutex 替换 std::sync::Mutex
@@ -87,11 +90,14 @@ impl AsyncPingStream {
         })
     }
 
-    // 实现 Python 异步迭代器协议
+    /// Python async iterator protocol: return self
     pub fn __aiter__(slf: PyRef<'_, Self>) -> PyRef<'_, Self> {
         slf
     }
 
+    /// Python async iterator protocol: get next ping result
+    ///
+    /// Returns the next ping result or raises `StopAsyncIteration` when the stream is exhausted.
     pub fn __anext__<'py>(&mut self, py: Python<'py>) -> PyResult<Bound<'py, PyAny>> {
         // 获取状态的克隆，以便在异步闭包中使用
         let state_clone = self.state.clone();

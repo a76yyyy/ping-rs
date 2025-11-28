@@ -7,17 +7,34 @@ use pyo3::types::PyDict;
 #[derive(Debug, Clone)]
 pub enum PingResult {
     /// 成功的 ping 响应，包含延迟时间（毫秒）和原始行
-    Pong { duration_ms: f64, line: String },
+    Pong {
+        /// 延迟时间（毫秒）
+        duration_ms: f64,
+        /// 原始输出行
+        line: String,
+    },
     /// 超时
-    Timeout { line: String },
+    Timeout {
+        /// 原始输出行
+        line: String,
+    },
     /// 未知响应
-    Unknown { line: String },
+    Unknown {
+        /// 原始输出行
+        line: String,
+    },
     /// Ping 进程退出
-    PingExited { exit_code: i32, stderr: String },
+    PingExited {
+        /// 退出代码
+        exit_code: i32,
+        /// 标准错误输出
+        stderr: String,
+    },
 }
 
 #[pymethods]
 impl PingResult {
+    /// Python `__repr__` method for string representation
     pub fn __repr__(&self) -> String {
         match self {
             Self::Pong { duration_ms, line } => {
@@ -31,6 +48,7 @@ impl PingResult {
         }
     }
 
+    /// Python `__str__` method for string representation
     pub fn __str__(&self) -> String {
         self.__repr__()
     }

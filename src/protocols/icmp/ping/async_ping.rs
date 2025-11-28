@@ -21,6 +21,14 @@ pub struct AsyncPinger {
 
 #[pymethods]
 impl AsyncPinger {
+    /// Create a new `AsyncPinger` instance
+    ///
+    /// # Arguments
+    /// - `target`: Target host (IP address or hostname)
+    /// - `interval_ms`: Interval between pings in milliseconds (default: 1000)
+    /// - `interface`: Network interface to use (optional)
+    /// - `ipv4`: Force IPv4 (default: false)
+    /// - `ipv6`: Force IPv6 (default: false)
     #[new]
     #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false))]
     pub fn new(
@@ -198,6 +206,7 @@ impl AsyncPinger {
         })
     }
 
+    /// Python `__repr__` method for string representation
     pub fn __repr__(&self) -> String {
         format!(
             "AsyncPinger(target='{}', interval_ms={}, ipv4={}, ipv6={})",

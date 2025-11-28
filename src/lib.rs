@@ -1,3 +1,10 @@
+//! # ping-rs
+//!
+//! Python bindings for ping functionality using `PyO3`.
+//!
+//! This library provides both synchronous and asynchronous ping implementations,
+//! as well as streaming interfaces for continuous ping operations.
+
 mod protocols;
 mod types;
 mod utils;
@@ -115,6 +122,9 @@ fn ping_multiple_async<'py>(
     pinger.ping_multiple(py, count, timeout_ms)
 }
 
+/// Get the version of the ping-rs library
+///
+/// Returns the version string, converting Rust semver format to Python-compatible format
 pub fn get_ping_rs_version() -> &'static str {
     static VERSION: OnceLock<String> = OnceLock::new();
 

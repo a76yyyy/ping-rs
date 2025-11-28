@@ -7,7 +7,9 @@ use pyo3::exceptions::{PyRuntimeError, PyStopIteration};
 use pyo3::prelude::*;
 use std::sync::mpsc;
 
-// 非阻塞 ping 流处理器
+/// Synchronous ping stream for continuous ping operations
+///
+/// This struct provides an iterator interface for streaming ping results.
 #[pyclass]
 pub struct PingStream {
     receiver: Option<std::sync::Arc<std::sync::Mutex<mpsc::Receiver<RustPingResult>>>>,
@@ -132,10 +134,14 @@ impl PingStream {
         self._recv(false, false)
     }
 
+    /// Python iterator protocol: return self
     pub fn __iter__(slf: Py<Self>) -> Py<Self> {
         slf
     }
 
+    /// Python iterator protocol: get next ping result
+    ///
+    /// Returns the next ping result or raises `StopIteration` when the stream is exhausted.
     pub fn __next__(&mut self) -> PyResult<Option<PingResult>> {
         self._recv(false, true)
     }
