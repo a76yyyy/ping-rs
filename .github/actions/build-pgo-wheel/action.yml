@@ -45,6 +45,8 @@ runs:
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
         rustup run ${{ inputs.rust-toolchain }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
       shell: bash
+      env:
+        PYTHONIOENCODING: utf-8
 
     - name: merge pgo data
       run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata

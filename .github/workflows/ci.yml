@@ -201,6 +201,8 @@ jobs:
       - run: uv pip freeze
 
       - run: uv run pytest -n logical
+        env:
+          PYTHONIOENCODING: utf-8
 
       - run: cargo test
 
@@ -650,6 +652,8 @@ jobs:
       - run: uv sync --group testing
       - run: uv pip install ping-rs --no-index --no-deps --find-links dist --force-reinstall
       - run: uv run pytest -n logical
+        env:
+          PYTHONIOENCODING: utf-8
 
   release:
     needs: [test-builds-arch, test-builds-os, build-sdist, check]
