@@ -1,4 +1,5 @@
-use crate::protocols::icmp::platform;
+use crate::protocols::icmp::execute_ping;
+use crate::types::options::DnsPreResolveOptions;
 use crate::types::result::PingResult;
 use crate::utils::conversion::{create_ping_options, extract_target};
 use crate::utils::validation::{validate_interval_ms, validate_timeout_ms};
@@ -15,7 +16,7 @@ pub struct Pinger {
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
-    dns_options: platform::DnsPreResolveOptions,
+    dns_options: DnsPreResolveOptions,
 }
 
 #[pymethods]
@@ -64,7 +65,7 @@ impl Pinger {
             interface,
             ipv4,
             ipv6,
-            dns_options: platform::DnsPreResolveOptions {
+            dns_options: DnsPreResolveOptions {
                 enable: dns_pre_resolve,
                 timeout: dns_timeout,
             },
@@ -85,7 +86,7 @@ impl Pinger {
         );
 
         // 执行ping并等待第一个结果
-        let receiver = platform::execute_ping(options, self.dns_options)
+        let receiver = execute_ping(options, self.dns_options)
             .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
         // 使用 interval 作为超时时间
@@ -133,7 +134,7 @@ impl Pinger {
         );
 
         // 执行ping
-        let receiver = platform::execute_ping(options, self.dns_options)
+        let receiver = execute_ping(options, self.dns_options)
             .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
         let mut results = Vec::new();

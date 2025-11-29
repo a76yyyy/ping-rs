@@ -1,4 +1,5 @@
-use crate::protocols::icmp::platform;
+use crate::protocols::icmp::execute_ping;
+use crate::types::options::DnsPreResolveOptions;
 use crate::types::result::PingResult;
 use crate::utils::conversion::{create_ping_options, extract_target};
 use crate::utils::validation::validate_interval_ms;
@@ -65,13 +66,13 @@ impl PingStream {
         // max_count 参数保存在 state 中，在迭代时由 Rust 层控制
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);
 
-        let dns_options = platform::DnsPreResolveOptions {
+        let dns_options = DnsPreResolveOptions {
             enable: dns_pre_resolve,
             timeout: dns_timeout,
         };
 
         // 执行 ping 并获取接收器
-        let receiver = match platform::execute_ping(options, dns_options) {
+        let receiver = match execute_ping(options, dns_options) {
             Ok(rx) => rx,
             Err(e) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}"))),
         };

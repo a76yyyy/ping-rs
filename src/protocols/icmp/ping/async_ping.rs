@@ -1,4 +1,5 @@
-use crate::protocols::icmp::platform;
+use crate::protocols::icmp::execute_ping_async;
+use crate::types::options::DnsPreResolveOptions;
 use crate::types::result::PingResult;
 use crate::utils::conversion::{create_ping_options, extract_target};
 use crate::utils::validation::{validate_interval_ms, validate_timeout_ms};
@@ -17,7 +18,7 @@ pub struct AsyncPinger {
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
-    dns_options: platform::DnsPreResolveOptions,
+    dns_options: DnsPreResolveOptions,
 }
 
 #[pymethods]
@@ -66,7 +67,7 @@ impl AsyncPinger {
             interface,
             ipv4,
             ipv6,
-            dns_options: platform::DnsPreResolveOptions {
+            dns_options: DnsPreResolveOptions {
                 enable: dns_pre_resolve,
                 timeout: dns_timeout,
             },
@@ -91,7 +92,7 @@ impl AsyncPinger {
             let interval_duration = std::time::Duration::from_millis(interval_ms);
 
             // 获取异步通道
-            let mut receiver = platform::execute_ping_async(options, dns_options)
+            let mut receiver = execute_ping_async(options, dns_options)
                 .await
                 .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
@@ -146,7 +147,7 @@ impl AsyncPinger {
             let start_time = Instant::now();
 
             // 获取异步通道
-            let mut receiver = platform::execute_ping_async(options, dns_options)
+            let mut receiver = execute_ping_async(options, dns_options)
                 .await
                 .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 

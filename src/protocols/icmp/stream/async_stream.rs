@@ -1,4 +1,5 @@
-use crate::protocols::icmp::platform;
+use crate::protocols::icmp::execute_ping_async;
+use crate::types::options::DnsPreResolveOptions;
 use crate::types::result::PingResult;
 use crate::utils::conversion::{create_ping_options, extract_target};
 use crate::utils::validation::validate_interval_ms;
@@ -29,7 +30,7 @@ async fn next_ping_stream(receiver: &mut tokio::sync::mpsc::UnboundedReceiver<Ru
 // 为 AsyncPingStream 创建内部状态结构
 struct AsyncPingStreamState {
     options: PingOptions,
-    dns_options: platform::DnsPreResolveOptions,
+    dns_options: DnsPreResolveOptions,
     receiver: Option<tokio::sync::mpsc::UnboundedReceiver<RustPingResult>>,
     max_count: Option<usize>,
     current_count: usize,
@@ -91,7 +92,7 @@ impl AsyncPingStream {
         // max_count 参数保存在 state 中，在 __anext__ 迭代时由 Rust 层控制
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);
 
-        let dns_options = platform::DnsPreResolveOptions {
+        let dns_options = DnsPreResolveOptions {
             enable: dns_pre_resolve,
             timeout: dns_timeout,
         };
@@ -147,7 +148,7 @@ impl AsyncPingStream {
                 result
             } else {
                 // 如果接收器不存在，创建新的接收器
-                let mut receiver = platform::execute_ping_async(state.options.clone(), state.dns_options)
+                let mut receiver = execute_ping_async(state.options.clone(), state.dns_options)
                     .await
                     .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
