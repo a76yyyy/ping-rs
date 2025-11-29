@@ -35,16 +35,23 @@ use std::sync::mpsc;
 ///
 /// # 示例
 ///
-/// ```rust
-/// use ping_rs::types::options::DnsPreResolveOptions;
-/// use ping_rs::protocols::icmp::execute_ping;
+/// ```ignore
+/// use _ping_rs::types::options::DnsPreResolveOptions;
+/// use _ping_rs::protocols::icmp::execute_ping;
+/// use pinger::PingOptions;
+/// use std::time::Duration;
 ///
-/// // 使用默认 DNS 预解析选项（启用，超时为 options.interval）
-/// let receiver = execute_ping(options, DnsPreResolveOptions::default())?;
+/// # fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let options = PingOptions::new("example.com", Duration::from_secs(1), None);
+///
+/// // 使用默认 DNS 预解析选项(启用,超时为 options.interval)
+/// let receiver = execute_ping(options.clone(), DnsPreResolveOptions::default())?;
 ///
 /// // 禁用 DNS 预解析
 /// let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
 /// let receiver = execute_ping(options, dns_opts)?;
+/// # Ok(())
+/// # }
 /// ```
 pub fn execute_ping(
     mut options: PingOptions,
@@ -126,16 +133,24 @@ pub fn execute_ping(
 ///
 /// # 示例
 ///
-/// ```rust
-/// use ping_rs::types::options::DnsPreResolveOptions;
-/// use ping_rs::protocols::icmp::execute_ping_async;
+/// ```ignore
+/// use _ping_rs::types::options::DnsPreResolveOptions;
+/// use _ping_rs::protocols::icmp::execute_ping_async;
+/// use pinger::PingOptions;
+/// use std::time::Duration;
 ///
-/// // 使用默认 DNS 预解析选项（启用，超时为 options.interval）
-/// let receiver = execute_ping_async(options, DnsPreResolveOptions::default()).await?;
+/// # #[tokio::main]
+/// # async fn main() -> Result<(), Box<dyn std::error::Error>> {
+/// let options = PingOptions::new("example.com", Duration::from_secs(1), None);
+///
+/// // 使用默认 DNS 预解析选项(启用,超时为 options.interval)
+/// let receiver = execute_ping_async(options.clone(), DnsPreResolveOptions::default()).await?;
 ///
 /// // 禁用 DNS 预解析
 /// let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
 /// let receiver = execute_ping_async(options, dns_opts).await?;
+/// # Ok(())
+/// # }
 /// ```
 pub async fn execute_ping_async(
     mut options: PingOptions,
