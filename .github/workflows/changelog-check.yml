@@ -53,8 +53,8 @@ jobs:
         run: |
           echo "Checking version ${{ inputs.version }} in both changelogs..."
 
-          EN_CHANGES="${{ steps.validate_en.outputs.changes }}"
-          ZH_CHANGES="${{ steps.validate_zh.outputs.changes }}"
+          EN_CHANGES='${{ steps.validate_en.outputs.changes }}'
+          ZH_CHANGES='${{ steps.validate_zh.outputs.changes }}'
 
           if [ -z "$EN_CHANGES" ]; then
             echo "::error::Version ${{ inputs.version }} not found in CHANGELOG.md"
@@ -67,6 +67,7 @@ jobs:
           fi
 
           echo "✅ Version ${{ inputs.version }} found in both changelogs"
+        shell: bash
 
       - name: Summary
         if: always()
