@@ -9,6 +9,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- DNS pre-resolution support with ability to disable DNS resolution
+- Custom DNS resolution timeout configuration
+- Extended sync and async ping interfaces with DNS configuration options
+- Extended streaming interfaces with DNS configuration support
+- Comprehensive documentation for ping module and related error types
+- Documentation for Python bindings ping functionality and streaming interfaces
+- Rust code quality and style checking configuration (Clippy and Rust lints)
+
+### Changed
+
+- Refactored positive integer conversion logic for improved parameter validation
+- Optimized parameter validation with extracted conversion functions
+- Enhanced build.rs with improved robustness for build environment variables
+- Unified documentation comment formatting with consistent backtick usage for code identifiers
+- Standardized string formatting to Rust 1.58+ inline variable syntax
+- Improved code comments with consistent punctuation and spacing
+
+### Fixed
+
+- Fixed max_count conversion overflow error handling to prevent unwrap panics
+- Improved error handling robustness in build configuration
+
 ## [2.0.1] - 2025-11-15
 
 ### Fixed
