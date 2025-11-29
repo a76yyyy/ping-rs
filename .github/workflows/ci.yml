@@ -22,7 +22,7 @@ jobs:
   changes:
     runs-on: ubuntu-latest
     # 如果是 tag push（发版），跳过这个检测，所有 jobs 都运行
-    if: "!startsWith(github.ref, 'refs/tags/')"
+    if: ${{ !startsWith(github.ref, 'refs/tags/') }}
     outputs:
       code: ${{ steps.filter.outputs.code }}
       docs: ${{ steps.filter.outputs.docs }}
@@ -336,7 +336,7 @@ jobs:
         (needs.changes.outputs.code == 'true' ||
         needs.changes.outputs.ci == 'true' ||
         needs.changes.outputs.deps == 'true')))
-    needs: [coverage, test-python, test-os, test-debug, lint]
+    needs: [changes, coverage, test-python, test-os, test-debug, lint]
     runs-on: ubuntu-latest
     steps:
       - name: Decide whether the needed jobs succeeded or failed
