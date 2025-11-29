@@ -9,6 +9,8 @@
 
 ## [Unreleased]
 
+## [2.1.0] - 2025-11-29
+
 ### Added
 
 - DNS 预解析支持，支持禁用 DNS 预解析功能
@@ -27,6 +29,9 @@
 - 统一文档注释格式，规范代码标识的反引号使用
 - 统一字符串格式化为 Rust 1.58+ 的内嵌变量语法
 - 优化代码注释的标点和空格规范
+- 在独立的 `src/types/options.rs` 模块中引入 `DnsPreResolveOptions` 用于 DNS 配置
+- 重新组织 ping 执行逻辑：将 `execute_ping` 和 `execute_ping_async` 从 `platform` 模块移至主 `icmp` 模块
+- 标记 `platform` 模块为废弃；改用 `crate::protocols::icmp::{execute_ping, execute_ping_async}`
 
 ### Fixed
 
@@ -149,7 +154,8 @@
 - tokio：异步运行时
 - serde：序列化支持
 
-[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/a76yyyy/ping-rs/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/a76yyyy/ping-rs/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/a76yyyy/ping-rs/compare/v1.0.0...v1.1.0

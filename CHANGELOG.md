@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.0] - 2025-11-29
+
 ### Added
 
 - DNS pre-resolution support with ability to disable DNS resolution
@@ -27,6 +29,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Unified documentation comment formatting with consistent backtick usage for code identifiers
 - Standardized string formatting to Rust 1.58+ inline variable syntax
 - Improved code comments with consistent punctuation and spacing
+- Introduced `DnsPreResolveOptions` in dedicated `src/types/options.rs` module for DNS configuration
+- Reorganized ping execution logic: moved `execute_ping` and `execute_ping_async` from `platform` module to main `icmp` module
+- Deprecated `platform` module; use `crate::protocols::icmp::{execute_ping, execute_ping_async}` instead
 
 ### Fixed
 
@@ -149,7 +154,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - tokio for async runtime
 - serde for serialization
 
-[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.0.1...HEAD
+[Unreleased]: https://github.com/a76yyyy/ping-rs/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/a76yyyy/ping-rs/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/a76yyyy/ping-rs/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/a76yyyy/ping-rs/compare/v1.1.0...v2.0.0
 [1.1.0]: https://github.com/a76yyyy/ping-rs/compare/v1.0.0...v1.1.0
