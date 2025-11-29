@@ -40,11 +40,11 @@ use std::sync::mpsc;
 /// use ping_rs::protocols::icmp::execute_ping;
 ///
 /// // 使用默认 DNS 预解析选项（启用，超时为 options.interval）
-/// // let receiver = execute_ping(options, DnsPreResolveOptions::default())?;
+/// let receiver = execute_ping(options, DnsPreResolveOptions::default())?;
 ///
 /// // 禁用 DNS 预解析
-/// // let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
-/// // let receiver = execute_ping(options, dns_opts)?;
+/// let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
+/// let receiver = execute_ping(options, dns_opts)?;
 /// ```
 pub fn execute_ping(
     mut options: PingOptions,
@@ -131,11 +131,11 @@ pub fn execute_ping(
 /// use ping_rs::protocols::icmp::execute_ping_async;
 ///
 /// // 使用默认 DNS 预解析选项（启用，超时为 options.interval）
-/// // let receiver = execute_ping_async(options, DnsPreResolveOptions::default()).await?;
+/// let receiver = execute_ping_async(options, DnsPreResolveOptions::default()).await?;
 ///
 /// // 禁用 DNS 预解析
-/// // let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
-/// // let receiver = execute_ping_async(options, dns_opts).await?;
+/// let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
+/// let receiver = execute_ping_async(options, dns_opts).await?;
 /// ```
 pub async fn execute_ping_async(
     mut options: PingOptions,
