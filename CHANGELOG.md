@@ -46,9 +46,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Align `PingStream` iterator protocol in stubs: make `__next__` synchronous and add constructor parameters to match Rust implementation
 - Remove duplicate top-level stub to avoid drift; keep authoritative stub at `ping_rs/_ping_rs.pyi`
 - Correct `PingResult` stubs: convert nested variant constructors to `__new__` and annotate base with `@disjoint_base` to improve typing and pattern matching
-
-### Changed
-
 - Updated development/lint dependencies; add `typing_extensions` and refresh dependency set
 - CI: enable workflow concurrency cancellation to avoid duplicate runs on rapid pushes
 - Release: derive changelog version by stripping leading `v` from tag for changelog reader action

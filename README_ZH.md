@@ -85,6 +85,32 @@ results = ping_multiple("google.com", count=10, timeout_ms=3000)
 print(f"超时前收到 {len(results)} 个结果")
 ```
 
+### DNS 配置
+
+```python
+from ping_rs import ping_once, ping_multiple
+
+# 禁用 DNS 预解析（让系统 ping 工具自行完成域名解析）
+result = ping_once("google.com", dns_pre_resolve=False)
+if result.is_success():
+    print(f"Ping 成功！延迟: {result.duration_ms} ms")
+
+# 自定义 DNS 预解析超时时间（毫秒，仅在启用 DNS 预解析时有效）
+results = ping_multiple("google.com", count=5, dns_resolve_timeout_ms=2000)
+for i, result in enumerate(results):
+    if result.is_success():
+        print(f"Ping {i+1}: {result.duration_ms} ms")
+
+# 同时配置 DNS 和其他参数
+result = ping_once(
+    "google.com",
+    timeout_ms=5000,
+    dns_pre_resolve=True,
+    dns_resolve_timeout_ms=3000,
+    ipv4=True
+)
+```
+
 ### 非阻塞流
 
 ```python
@@ -125,11 +151,11 @@ for i, result in enumerate(stream):
 
 ### 函数
 
-- `ping_once(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False)`: 同步执行单次 ping 操作
-- `ping_once_async(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False)`: 异步执行单次 ping 操作
-- `ping_multiple(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: 同步执行多次 ping 操作
-- `ping_multiple_async(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: 异步执行多次 ping 操作
-- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, count=None)`: 创建非阻塞 ping 流
+- `ping_once(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: 同步执行单次 ping 操作
+- `ping_once_async(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: 异步执行单次 ping 操作
+- `ping_multiple(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: 同步执行多次 ping 操作
+- `ping_multiple_async(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: 异步执行多次 ping 操作
+- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, count=None, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: 创建非阻塞 ping 流
 
 ### 类
 
@@ -177,7 +203,7 @@ for i, result in enumerate(stream):
 
 支持原生 async/await 的异步 ping 流处理器。
 
-- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, max_count=None)`: 初始化 AsyncPingStream
+- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, max_count=None, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: 初始化 AsyncPingStream
 - `__aiter__()`: 将自身作为异步迭代器返回
 - `__anext__()`: 异步获取下一个 ping 结果
 

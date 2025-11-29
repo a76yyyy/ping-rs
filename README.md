@@ -85,6 +85,32 @@ results = ping_multiple("google.com", count=10, timeout_ms=3000)
 print(f"Received {len(results)} results before timeout")
 ```
 
+### DNS Configuration
+
+```python
+from ping_rs import ping_once, ping_multiple
+
+# Disable DNS pre-resolution (let the system ping tool handle domain name resolution)
+result = ping_once("google.com", dns_pre_resolve=False)
+if result.is_success():
+    print(f"Ping successful! Latency: {result.duration_ms} ms")
+
+# Custom DNS pre-resolution timeout (in milliseconds, only effective when DNS pre-resolution is enabled)
+results = ping_multiple("google.com", count=5, dns_resolve_timeout_ms=2000)
+for i, result in enumerate(results):
+    if result.is_success():
+        print(f"Ping {i+1}: {result.duration_ms} ms")
+
+# Configure DNS and other parameters together
+result = ping_once(
+    "google.com",
+    timeout_ms=5000,
+    dns_pre_resolve=True,
+    dns_resolve_timeout_ms=3000,
+    ipv4=True
+)
+```
+
 ### Non-blocking Stream
 
 ```python
@@ -125,11 +151,11 @@ for i, result in enumerate(stream):
 
 ### Functions
 
-- `ping_once(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False)`: Execute a single ping operation synchronously
-- `ping_once_async(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False)`: Execute a single ping operation asynchronously
-- `ping_multiple(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: Execute multiple pings synchronously
-- `ping_multiple_async(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False)`: Execute multiple pings asynchronously
-- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, count=None)`: Create a non-blocking ping stream
+- `ping_once(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: Execute a single ping operation synchronously
+- `ping_once_async(target, timeout_ms=5000, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: Execute a single ping operation asynchronously
+- `ping_multiple(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: Execute multiple pings synchronously
+- `ping_multiple_async(target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=False, ipv6=False, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: Execute multiple pings asynchronously
+- `create_ping_stream(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, count=None, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: Create a non-blocking ping stream
 
 ### Classes
 
@@ -177,7 +203,7 @@ Non-blocking ping stream processor.
 
 Async ping stream processor with native async/await support.
 
-- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, max_count=None)`: Initialize an AsyncPingStream
+- `__init__(target, interval_ms=1000, interface=None, ipv4=False, ipv6=False, max_count=None, dns_pre_resolve=True, dns_resolve_timeout_ms=None)`: Initialize an AsyncPingStream
 - `__aiter__()`: Return self as an async iterator
 - `__anext__()`: Get the next ping result asynchronously
 
