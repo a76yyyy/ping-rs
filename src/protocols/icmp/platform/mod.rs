@@ -1,9 +1,35 @@
 use pinger::{PingOptions, PingResult};
 use std::sync::mpsc;
+use std::time::Duration;
+
+/// DNS 预解析配置选项
+///
+/// 用于控制 DNS 主机名解析的行为
+#[derive(Clone, Copy, Debug)]
+pub struct DnsPreResolveOptions {
+    /// 是否启用 DNS 预解析（默认为 true）
+    pub enable: bool,
+    /// DNS 解析超时时间（默认为 None，表示使用 options.interval）
+    pub timeout: Option<Duration>,
+}
+
+impl Default for DnsPreResolveOptions {
+    fn default() -> Self {
+        Self {
+            enable: true,
+            timeout: None,
+        }
+    }
+}
 
 /// 执行ping操作的统一接口，返回标准库的通道
 ///
 /// 所有平台统一使用 pinger 库的实现
+///
+/// # 参数
+///
+/// - `options`: Ping 选项配置
+/// - `dns_options`: DNS 预解析选项配置
 ///
 /// # 特殊处理
 ///
@@ -15,7 +41,67 @@ use std::sync::mpsc;
 ///
 /// 其他类型的 `PingCreationError` (如 `UnknownPing`, `SpawnError`, `NotSupported`)
 /// 仍然会作为错误返回，因为它们表示环境问题而非目标问题。
-pub fn execute_ping(options: PingOptions) -> Result<mpsc::Receiver<PingResult>, pinger::PingCreationError> {
+///
+/// # 示例
+///
+/// ```rust
+/// // 使用默认 DNS 预解析选项（启用，超时为 options.interval）
+/// let receiver = execute_ping(options, DnsPreResolveOptions::default())?;
+///
+/// // 禁用 DNS 预解析
+/// let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
+/// let receiver = execute_ping(options, dns_opts)?;
+///
+/// // 自定义 DNS 解析超时
+/// let dns_opts = DnsPreResolveOptions {
+///     enable: true,
+///     timeout: Some(Duration::from_secs(5)),
+/// };
+/// let receiver = execute_ping(options, dns_opts)?;
+/// ```
+pub fn execute_ping(
+    mut options: PingOptions,
+    dns_options: DnsPreResolveOptions,
+) -> Result<mpsc::Receiver<PingResult>, pinger::PingCreationError> {
+    // 尝试预解析主机名，以避免 ping 命令解析超时或卡住
+    if dns_options.enable {
+        if let pinger::target::Target::Hostname { .. } = &options.target {
+            let target = options.target.clone();
+            let resolve_timeout = dns_options.timeout.unwrap_or(options.interval);
+
+            let (tx_resolve, rx_resolve) = std::sync::mpsc::channel();
+            std::thread::spawn(move || {
+                let result = pinger::utils::resolve_target(&target);
+                let _ = tx_resolve.send(result);
+            });
+
+            match rx_resolve.recv_timeout(resolve_timeout) {
+                Ok(Ok(ip)) => {
+                    // 解析成功，更新 target 为 IP，避免 ping 命令再次解析
+                    options.target = pinger::target::Target::IP(ip);
+                }
+                Ok(Err(e)) => {
+                    // 解析失败，直接返回 PingExited
+                    let (tx, rx) = mpsc::channel();
+                    let _ = tx.send(PingResult::PingExited(
+                        std::process::ExitStatus::default(),
+                        e.to_string(),
+                    ));
+                    return Ok(rx);
+                }
+                Err(_) => {
+                    // 解析超时，直接返回 PingExited
+                    let (tx, rx) = mpsc::channel();
+                    let _ = tx.send(PingResult::PingExited(
+                        std::process::ExitStatus::default(),
+                        "Hostname resolution timeout".to_string(),
+                    ));
+                    return Ok(rx);
+                }
+            }
+        }
+    }
+
     match pinger::ping(options) {
         Ok(rx) => Ok(rx),
         Err(e @ pinger::PingCreationError::HostnameError(_)) => {
@@ -35,6 +121,11 @@ pub fn execute_ping(options: PingOptions) -> Result<mpsc::Receiver<PingResult>, 
 ///
 /// 所有平台统一使用 pinger 库的实现
 ///
+/// # 参数
+///
+/// - `options`: Ping 选项配置
+/// - `dns_options`: DNS 预解析选项配置
+///
 /// # 特殊处理
 ///
 /// 将 `PingCreationError::HostnameError` 转换为 `PingResult::PingExited`，
@@ -45,9 +136,59 @@ pub fn execute_ping(options: PingOptions) -> Result<mpsc::Receiver<PingResult>, 
 ///
 /// 其他类型的 `PingCreationError` (如 `UnknownPing`, `SpawnError`, `NotSupported`)
 /// 仍然会作为错误返回，因为它们表示环境问题而非目标问题。
+///
+/// # 示例
+///
+/// ```rust
+/// // 使用默认 DNS 预解析选项（启用，超时为 options.interval）
+/// let receiver = execute_ping_async(options, DnsPreResolveOptions::default()).await?;
+///
+/// // 禁用 DNS 预解析
+/// let dns_opts = DnsPreResolveOptions { enable: false, timeout: None };
+/// let receiver = execute_ping_async(options, dns_opts).await?;
+///
+/// // 自定义 DNS 解析超时
+/// let dns_opts = DnsPreResolveOptions {
+///     enable: true,
+///     timeout: Some(Duration::from_secs(5)),
+/// };
+/// let receiver = execute_ping_async(options, dns_opts).await?;
+/// ```
 pub async fn execute_ping_async(
-    options: PingOptions,
+    mut options: PingOptions,
+    dns_options: DnsPreResolveOptions,
 ) -> Result<tokio::sync::mpsc::UnboundedReceiver<PingResult>, pinger::PingCreationError> {
+    // 尝试预解析主机名，以避免 ping 命令解析超时或卡住
+    if dns_options.enable {
+        if let pinger::target::Target::Hostname { .. } = &options.target {
+            let resolve_timeout = dns_options.timeout.unwrap_or(options.interval);
+            match tokio::time::timeout(resolve_timeout, pinger::utils::resolve_target_async(&options.target)).await {
+                Ok(Ok(ip)) => {
+                    // 解析成功，更新 target 为 IP，避免 ping 命令再次解析
+                    options.target = pinger::target::Target::IP(ip);
+                }
+                Ok(Err(e)) => {
+                    // 解析失败，直接返回 PingExited
+                    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                    let _ = tx.send(PingResult::PingExited(
+                        std::process::ExitStatus::default(),
+                        e.to_string(),
+                    ));
+                    return Ok(rx);
+                }
+                Err(_) => {
+                    // 解析超时，返回错误
+                    let (tx, rx) = tokio::sync::mpsc::unbounded_channel();
+                    let _ = tx.send(PingResult::PingExited(
+                        std::process::ExitStatus::default(),
+                        "Hostname resolution timeout".to_string(),
+                    ));
+                    return Ok(rx);
+                }
+            }
+        }
+    }
+
     match pinger::ping_async(options).await {
         Ok(rx) => Ok(rx),
         Err(e @ pinger::PingCreationError::HostnameError(_)) => {

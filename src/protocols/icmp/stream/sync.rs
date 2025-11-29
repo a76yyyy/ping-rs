@@ -26,7 +26,7 @@ impl PingStream {
     /// - `PyTypeError`: If the target cannot be converted to a string
     /// - `PyRuntimeError`: If the ping process fails to start
     #[new]
-    #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None))]
+    #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
     pub fn new(
         target: &Bound<PyAny>,
         interval_ms: i64,
@@ -34,6 +34,8 @@ impl PingStream {
         ipv4: bool,
         ipv6: bool,
         max_count: Option<usize>,
+        dns_pre_resolve: bool,
+        dns_resolve_timeout_ms: Option<i64>,
     ) -> PyResult<Self> {
         // 提取目标地址
         let target_str = extract_target(target)?;
@@ -51,12 +53,25 @@ impl PingStream {
             crate::utils::validation::validate_count(count_i32, "max_count")?;
         }
 
+        // 处理 DNS 超时参数
+        let dns_timeout = if let Some(timeout_ms) = dns_resolve_timeout_ms {
+            let timeout_u64 = crate::utils::validation::i64_to_u64_positive(timeout_ms, "dns_resolve_timeout_ms")?;
+            Some(std::time::Duration::from_millis(timeout_u64))
+        } else {
+            None
+        };
+
         // 创建 ping 选项（不传递 count 给底层 ping 命令）
         // max_count 参数保存在 state 中，在迭代时由 Rust 层控制
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);
 
+        let dns_options = platform::DnsPreResolveOptions {
+            enable: dns_pre_resolve,
+            timeout: dns_timeout,
+        };
+
         // 执行 ping 并获取接收器
-        let receiver = match platform::execute_ping(options) {
+        let receiver = match platform::execute_ping(options, dns_options) {
             Ok(rx) => rx,
             Err(e) => return Err(PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}"))),
         };

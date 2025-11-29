@@ -5,6 +5,8 @@
 //! This library provides both synchronous and asynchronous ping implementations,
 //! as well as streaming interfaces for continuous ping operations.
 
+#![allow(clippy::too_many_arguments)] // 添加允许多参数的属性
+
 mod protocols;
 mod types;
 mod utils;
@@ -24,7 +26,7 @@ pub use types::result::PingResult;
 
 /// 创建非阻塞 ping 流
 #[pyfunction]
-#[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, count=None))]
+#[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, count=None, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
 fn create_ping_stream(
     target: &Bound<PyAny>,
     interval_ms: i64,
@@ -32,9 +34,20 @@ fn create_ping_stream(
     ipv4: bool,
     ipv6: bool,
     count: Option<usize>,
+    dns_pre_resolve: bool,
+    dns_resolve_timeout_ms: Option<i64>,
 ) -> PyResult<PingStream> {
     // 直接使用 PingStream 的构造函数
-    PingStream::new(target, interval_ms, interface, ipv4, ipv6, count)
+    PingStream::new(
+        target,
+        interval_ms,
+        interface,
+        ipv4,
+        ipv6,
+        count,
+        dns_pre_resolve,
+        dns_resolve_timeout_ms,
+    )
 }
 
 /// 执行单次 ping（同步版本）
@@ -43,17 +56,27 @@ fn create_ping_stream(
 /// - `timeout_ms`: 等待响应的超时时间（毫秒），默认 1000ms
 ///   注意：内部实现中，这个值会被用作 `interval_ms` 传递给底层 ping 命令
 #[pyfunction]
-#[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false))]
+#[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
 fn ping_once(
     target: &Bound<PyAny>,
     timeout_ms: i64,
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
+    dns_pre_resolve: bool,
+    dns_resolve_timeout_ms: Option<i64>,
 ) -> PyResult<PingResult> {
     // 创建 Pinger 实例
     // 注意：这里将 timeout_ms 作为 interval_ms 传递，因为 ping_once 中会将其用作超时时间
-    let pinger = Pinger::new(target, timeout_ms, interface, ipv4, ipv6)?;
+    let pinger = Pinger::new(
+        target,
+        timeout_ms,
+        interface,
+        ipv4,
+        ipv6,
+        dns_pre_resolve,
+        dns_resolve_timeout_ms,
+    )?;
 
     // 执行 ping_once
     pinger.ping_once()
@@ -65,7 +88,7 @@ fn ping_once(
 /// - `timeout_ms`: 等待响应的超时时间（毫秒），默认 1000ms
 ///   注意：内部实现中，这个值会被用作 `interval_ms` 传递给底层 ping 命令
 #[pyfunction]
-#[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false))]
+#[pyo3(signature = (target, timeout_ms=1000, interface=None, ipv4=false, ipv6=false, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
 fn ping_once_async<'py>(
     py: Python<'py>,
     target: &Bound<PyAny>,
@@ -73,10 +96,20 @@ fn ping_once_async<'py>(
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
+    dns_pre_resolve: bool,
+    dns_resolve_timeout_ms: Option<i64>,
 ) -> PyResult<Bound<'py, PyAny>> {
     // 创建 AsyncPinger 实例
     // 注意：这里将 timeout_ms 作为 interval_ms 传递，因为 ping_once 中会将其用作超时时间
-    let pinger = AsyncPinger::new(target, timeout_ms, interface, ipv4, ipv6)?;
+    let pinger = AsyncPinger::new(
+        target,
+        timeout_ms,
+        interface,
+        ipv4,
+        ipv6,
+        dns_pre_resolve,
+        dns_resolve_timeout_ms,
+    )?;
 
     // 执行异步 ping_once
     pinger.ping_once(py)
@@ -84,7 +117,7 @@ fn ping_once_async<'py>(
 
 /// 执行多次 ping（同步版本）
 #[pyfunction]
-#[pyo3(signature = (target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=false, ipv6=false))]
+#[pyo3(signature = (target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=false, ipv6=false, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
 fn ping_multiple(
     target: &Bound<PyAny>,
     count: i32,
@@ -93,9 +126,19 @@ fn ping_multiple(
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
+    dns_pre_resolve: bool,
+    dns_resolve_timeout_ms: Option<i64>,
 ) -> PyResult<Vec<PingResult>> {
     // 创建 Pinger 实例
-    let pinger = Pinger::new(target, interval_ms, interface, ipv4, ipv6)?;
+    let pinger = Pinger::new(
+        target,
+        interval_ms,
+        interface,
+        ipv4,
+        ipv6,
+        dns_pre_resolve,
+        dns_resolve_timeout_ms,
+    )?;
 
     // 执行 ping_multiple
     pinger.ping_multiple(count, timeout_ms)
@@ -103,7 +146,7 @@ fn ping_multiple(
 
 /// 执行多次 ping（异步版本）
 #[pyfunction]
-#[pyo3(signature = (target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=false, ipv6=false))]
+#[pyo3(signature = (target, count=4, interval_ms=1000, timeout_ms=None, interface=None, ipv4=false, ipv6=false, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
 #[allow(clippy::too_many_arguments)] // 添加允许多参数的属性
 fn ping_multiple_async<'py>(
     py: Python<'py>,
@@ -114,9 +157,19 @@ fn ping_multiple_async<'py>(
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
+    dns_pre_resolve: bool,
+    dns_resolve_timeout_ms: Option<i64>,
 ) -> PyResult<Bound<'py, PyAny>> {
     // 创建 AsyncPinger 实例
-    let pinger = AsyncPinger::new(target, interval_ms, interface, ipv4, ipv6)?;
+    let pinger = AsyncPinger::new(
+        target,
+        interval_ms,
+        interface,
+        ipv4,
+        ipv6,
+        dns_pre_resolve,
+        dns_resolve_timeout_ms,
+    )?;
 
     // 执行异步 ping_multiple
     pinger.ping_multiple(py, count, timeout_ms)

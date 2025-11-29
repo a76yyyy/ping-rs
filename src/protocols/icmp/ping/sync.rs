@@ -15,6 +15,7 @@ pub struct Pinger {
     interface: Option<String>,
     ipv4: bool,
     ipv6: bool,
+    dns_options: platform::DnsPreResolveOptions,
 }
 
 #[pymethods]
@@ -27,23 +28,35 @@ impl Pinger {
     /// - `interface`: Network interface to use (optional)
     /// - `ipv4`: Force IPv4 (default: false)
     /// - `ipv6`: Force IPv6 (default: false)
+    /// - `dns_pre_resolve`: Enable DNS pre-resolution (default: true)
+    /// - `dns_resolve_timeout_ms`: DNS resolution timeout in milliseconds (default: None, uses `interval_ms`)
     ///
     /// # Errors
     /// - `PyValueError`: If `interval_ms` is negative, less than 100ms, or not a multiple of 100ms
     /// - `PyTypeError`: If the target cannot be converted to a string
     #[new]
-    #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false))]
+    #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
     pub fn new(
         target: &Bound<PyAny>,
         interval_ms: i64,
         interface: Option<String>,
         ipv4: bool,
         ipv6: bool,
+        dns_pre_resolve: bool,
+        dns_resolve_timeout_ms: Option<i64>,
     ) -> PyResult<Self> {
         let target_str = extract_target(target)?;
 
         // 验证 interval_ms 参数
         let interval_ms_u64 = validate_interval_ms(interval_ms, "interval_ms")?;
+
+        // 处理 DNS 超时参数
+        let dns_timeout = if let Some(timeout_ms) = dns_resolve_timeout_ms {
+            let timeout_u64 = crate::utils::validation::i64_to_u64_positive(timeout_ms, "dns_resolve_timeout_ms")?;
+            Some(std::time::Duration::from_millis(timeout_u64))
+        } else {
+            None
+        };
 
         Ok(Self {
             target: target_str,
@@ -51,6 +64,10 @@ impl Pinger {
             interface,
             ipv4,
             ipv6,
+            dns_options: platform::DnsPreResolveOptions {
+                enable: dns_pre_resolve,
+                timeout: dns_timeout,
+            },
         })
     }
 
@@ -68,7 +85,7 @@ impl Pinger {
         );
 
         // 执行ping并等待第一个结果
-        let receiver = platform::execute_ping(options)
+        let receiver = platform::execute_ping(options, self.dns_options)
             .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
         // 使用 interval 作为超时时间
@@ -116,7 +133,7 @@ impl Pinger {
         );
 
         // 执行ping
-        let receiver = platform::execute_ping(options)
+        let receiver = platform::execute_ping(options, self.dns_options)
             .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
         let mut results = Vec::new();

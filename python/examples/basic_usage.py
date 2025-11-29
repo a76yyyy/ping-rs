@@ -45,6 +45,16 @@ def sync_examples():
     result = pinger.ping_once()
     print(f"IPv4-only ping: {result}")
 
+    # 禁用 DNS 预解析
+    pinger = Pinger("8.8.8.8", dns_pre_resolve=False)
+    result = pinger.ping_once()
+    print(f"Ping without DNS pre-resolve: {result}")
+
+    # 自定义 DNS 解析超时
+    pinger = Pinger("8.8.8.8", dns_resolve_timeout_ms=5000)
+    result = pinger.ping_once()
+    print(f"Ping with custom DNS timeout: {result}")
+
 
 async def async_examples():
     """异步 API 示例"""

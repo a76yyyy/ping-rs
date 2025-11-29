@@ -120,6 +120,8 @@ class Pinger:
         interface: str | None = None,
         ipv4: bool = False,
         ipv6: bool = False,
+        dns_pre_resolve: bool = True,
+        dns_resolve_timeout_ms: int | None = None,
     ) -> Pinger: ...
     def ping_once(self) -> PingResult:
         """Execute a single ping synchronously."""
@@ -143,6 +145,8 @@ class AsyncPinger:
         interface: str | None = None,
         ipv4: bool = False,
         ipv6: bool = False,
+        dns_pre_resolve: bool = True,
+        dns_resolve_timeout_ms: int | None = None,
     ) -> AsyncPinger: ...
     async def ping_once(self) -> PingResult:
         """Execute a single ping asynchronously."""
@@ -167,6 +171,8 @@ class PingStream:
         ipv4: bool = False,
         ipv6: bool = False,
         max_count: int | None = None,
+        dns_pre_resolve: bool = True,
+        dns_resolve_timeout_ms: int | None = None,
     ) -> PingStream: ...
     def try_recv(self) -> PingResult | None:
         """Try to receive the next ping result without blocking."""
@@ -204,6 +210,8 @@ class AsyncPingStream:
         ipv4: bool = False,
         ipv6: bool = False,
         max_count: int | None = None,
+        dns_pre_resolve: bool = True,
+        dns_resolve_timeout_ms: int | None = None,
     ) -> AsyncPingStream: ...
     def __aiter__(self) -> AsyncPingStream:
         """Return self as an async iterator."""
@@ -223,6 +231,8 @@ def ping_once(
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
+    dns_pre_resolve: bool = True,
+    dns_resolve_timeout_ms: int | None = None,
 ) -> PingResult:
     """Execute a single ping operation synchronously."""
     ...
@@ -233,6 +243,8 @@ async def ping_once_async(
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
+    dns_pre_resolve: bool = True,
+    dns_resolve_timeout_ms: int | None = None,
 ) -> PingResult:
     """Execute a single ping operation asynchronously."""
     ...
@@ -245,6 +257,8 @@ def ping_multiple(
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
+    dns_pre_resolve: bool = True,
+    dns_resolve_timeout_ms: int | None = None,
 ) -> list[PingResult]:
     """Execute multiple ping operations synchronously."""
     ...
@@ -257,6 +271,8 @@ async def ping_multiple_async(
     interface: str | None = None,
     ipv4: bool = False,
     ipv6: bool = False,
+    dns_pre_resolve: bool = True,
+    dns_resolve_timeout_ms: int | None = None,
 ) -> list[PingResult]:
     """Execute multiple ping operations asynchronously."""
     ...
@@ -268,6 +284,8 @@ def create_ping_stream(
     ipv4: bool = False,
     ipv6: bool = False,
     count: int | None = None,
+    dns_pre_resolve: bool = True,
+    dns_resolve_timeout_ms: int | None = None,
 ) -> PingStream:
     """Create a non-blocking ping stream."""
     ...

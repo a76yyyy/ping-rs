@@ -29,6 +29,7 @@ async fn next_ping_stream(receiver: &mut tokio::sync::mpsc::UnboundedReceiver<Ru
 // 为 AsyncPingStream 创建内部状态结构
 struct AsyncPingStreamState {
     options: PingOptions,
+    dns_options: platform::DnsPreResolveOptions,
     receiver: Option<tokio::sync::mpsc::UnboundedReceiver<RustPingResult>>,
     max_count: Option<usize>,
     current_count: usize,
@@ -51,7 +52,7 @@ impl AsyncPingStream {
     /// - `PyValueError`: If `interval_ms` is negative, less than 100ms, not a multiple of 100ms, or `max_count` is too large
     /// - `PyTypeError`: If the target cannot be converted to a string
     #[new]
-    #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None))]
+    #[pyo3(signature = (target, interval_ms=1000, interface=None, ipv4=false, ipv6=false, max_count=None, dns_pre_resolve=true, dns_resolve_timeout_ms=None))]
     pub fn new(
         target: &Bound<PyAny>,
         interval_ms: i64,
@@ -59,6 +60,8 @@ impl AsyncPingStream {
         ipv4: bool,
         ipv6: bool,
         max_count: Option<usize>,
+        dns_pre_resolve: bool,
+        dns_resolve_timeout_ms: Option<i64>,
     ) -> PyResult<AsyncPingStream> {
         // 提取目标地址
         let target_str = extract_target(target)?;
@@ -76,13 +79,27 @@ impl AsyncPingStream {
             crate::utils::validation::validate_count(count_i32, "max_count")?;
         }
 
+        // 处理 DNS 超时参数
+        let dns_timeout = if let Some(timeout_ms) = dns_resolve_timeout_ms {
+            let timeout_u64 = crate::utils::validation::i64_to_u64_positive(timeout_ms, "dns_resolve_timeout_ms")?;
+            Some(std::time::Duration::from_millis(timeout_u64))
+        } else {
+            None
+        };
+
         // 创建 ping 选项（不传递 count 给底层 ping 命令）
         // max_count 参数保存在 state 中，在 __anext__ 迭代时由 Rust 层控制
         let options = create_ping_options(&target_str, interval_ms_u64, interface, ipv4, ipv6);
 
+        let dns_options = platform::DnsPreResolveOptions {
+            enable: dns_pre_resolve,
+            timeout: dns_timeout,
+        };
+
         // 创建内部状态
         let state = AsyncPingStreamState {
             options,
+            dns_options,
             receiver: None,
             max_count,
             current_count: 0,
@@ -130,7 +147,7 @@ impl AsyncPingStream {
                 result
             } else {
                 // 如果接收器不存在，创建新的接收器
-                let mut receiver = platform::execute_ping_async(state.options.clone())
+                let mut receiver = platform::execute_ping_async(state.options.clone(), state.dns_options)
                     .await
                     .map_err(|e| PyErr::new::<PyRuntimeError, _>(format!("Failed to start ping: {e}")))?;
 
