@@ -1,6 +1,12 @@
 // ICMP协议实现
 pub mod ping;
+
+#[deprecated(
+    since = "2.1.0",
+    note = "Use `crate::protocols::icmp::{execute_ping, execute_ping_async}` instead"
+)]
 pub mod platform;
+
 pub mod stream;
 
 use crate::types::options::DnsPreResolveOptions;

@@ -1,11 +1,9 @@
-#[allow(unused_imports)]
-#[deprecated(note = "Use `crate::types::options::DnsPreResolveOptions` instead")]
-pub use crate::types::options::DnsPreResolveOptions;
+//! Deprecated module. Use `crate::protocols::icmp::{execute_ping, execute_ping_async}` instead.
 
 #[allow(unused_imports)]
-#[deprecated(note = "Use `crate::protocols::icmp::execute_ping` instead")]
+#[deprecated(since = "2.1.0", note = "Use `crate::protocols::icmp::execute_ping` instead")]
 pub use crate::protocols::icmp::execute_ping;
 
 #[allow(unused_imports)]
-#[deprecated(note = "Use `crate::protocols::icmp::execute_ping_async` instead")]
+#[deprecated(since = "2.1.0", note = "Use `crate::protocols::icmp::execute_ping_async` instead")]
 pub use crate::protocols::icmp::execute_ping_async;
