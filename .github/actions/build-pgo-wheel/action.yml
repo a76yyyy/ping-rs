@@ -2,19 +2,18 @@ name: Build PGO wheel
 description: Builds a PGO-optimized wheel
 inputs:
   interpreter:
-    description: 'Interpreter to build the wheel for'
+    description: "Interpreter to build the wheel for"
     required: true
   rust-toolchain:
-    description: 'Rust toolchain to use'
+    description: "Rust toolchain to use"
     required: true
 outputs:
   wheel:
-    description: 'Path to the built wheel'
+    description: "Path to the built wheel"
     value: ${{ steps.find_wheel.outputs.path }}
 runs:
   using: "composite"
   steps:
-
     - name: prepare profiling directory
       shell: bash
       # making this ahead of the compile ensures that the local user can write to this
@@ -32,7 +31,7 @@ runs:
         rust-toolchain: ${{ inputs.rust-toolchain }}
         docker-options: -e CI
       env:
-        RUSTFLAGS: '-Cprofile-generate=${{ github.workspace }}/profdata'
+        RUSTFLAGS: "-Cprofile-generate=${{ github.workspace }}/profdata"
 
     - name: detect rust host
       run: echo RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2) >> "$GITHUB_ENV"
@@ -42,14 +41,14 @@ runs:
       run: |
         uv sync --group testing
         uv pip install ping_rs --no-index --no-deps --find-links pgo-wheel --force-reinstall
-        uv run pytest tests
+        uv run pytest -n logical tests
         RUST_HOST=$(rustc -Vv | grep host | cut -d ' ' -f 2)
         rustup run ${{ inputs.rust-toolchain }} bash -c 'echo LLVM_PROFDATA=$RUSTUP_HOME/toolchains/$RUSTUP_TOOLCHAIN/lib/rustlib/$RUST_HOST/bin/llvm-profdata >> "$GITHUB_ENV"'
       shell: bash
 
     - name: merge pgo data
       run: ${{ env.LLVM_PROFDATA }} merge -o ${{ github.workspace }}/merged.profdata ${{ github.workspace }}/profdata
-      shell: pwsh  # because it handles paths on windows better, and works well enough on unix for this step
+      shell: pwsh # because it handles paths on windows better, and works well enough on unix for this step
 
     - name: build pgo-optimized wheel
       uses: PyO3/maturin-action@v1
@@ -62,7 +61,7 @@ runs:
         rust-toolchain: ${{inputs.rust-toolchain}}
         docker-options: -e CI
       env:
-        RUSTFLAGS: '-Cprofile-use=${{ github.workspace }}/merged.profdata'
+        RUSTFLAGS: "-Cprofile-use=${{ github.workspace }}/merged.profdata"
 
     - name: find built wheel
       id: find_wheel
