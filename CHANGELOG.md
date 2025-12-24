@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [2.1.1] - 2025-11-29
+
+### Fixed
+
+- Fix Linux platform ping unable to recognize non-64 bytes ICMP request packet issue
+- Update python development environment dependency version
+
 ## [2.1.0] - 2025-11-29
 
 ### Added

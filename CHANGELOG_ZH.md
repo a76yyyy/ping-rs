@@ -9,6 +9,13 @@
 
 ## [Unreleased]
 
+## [2.1.1] - 2025-11-29
+
+### Fixed
+
+- 修复 Linux 平台下 ping 无法识别非 64 bytes 的 ICMP 请求包问题
+- 更新 python 开发环境依赖版本
+
 ## [2.1.0] - 2025-11-29
 
 ### Added
