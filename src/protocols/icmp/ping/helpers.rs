@@ -20,11 +20,11 @@ pub fn calculate_timeout_info(
     let elapsed = now.duration_since(start_time);
 
     if elapsed < timeout_duration {
-        // 还没到 timeout，正常等待
-        return (false, Some(timeout_duration - elapsed), None);
+        // 还没到 timeout,正常等待
+        return (false, timeout_duration.checked_sub(elapsed), None);
     }
 
-    // 已经超过 timeout，计算最后一个已完成等待的包
+    // 已经超过 timeout,计算最后一个已完成等待的包
     // 计算最后一个"已经完成等待"的包的序号（从0开始）
     // 在时刻 t,已经完成等待的包是那些发送时间 <= t - interval 的包
     // 例如: t=3000ms, interval=500ms
@@ -75,8 +75,8 @@ pub fn calculate_timeout_info(
     let elapsed = now.duration_since(start_time);
 
     if elapsed < timeout_duration {
-        // 还没到 timeout，正常等待
-        return (false, Some(timeout_duration - elapsed), None);
+        // 还没到 timeout,正常等待
+        return (false, timeout_duration.checked_sub(elapsed), None);
     }
 
     // 已经超过 timeout
